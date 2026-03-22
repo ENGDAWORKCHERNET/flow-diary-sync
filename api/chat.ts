@@ -6,16 +6,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { messages } = req.body || {};
-  const apiKey = process.env.GROK_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    console.error('GROK_API_KEY is missing');
+    console.error('GROQ_API_KEY is missing');
     return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
     const payload = {
-      model: 'grok-beta',
+      model: 'llama-3.1-8b-instant',
       messages: [
         {
           role: 'system',
@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       stream: false,
     };
 
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,18 +38,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('xAI API Error Response:', JSON.stringify(data));
-      return res.status(response.status).json({ error: data.error || 'xAI API Error' });
+      console.error('Groq API Error Response:', JSON.stringify(data));
+      return res.status(response.status).json({ error: data.error || 'Groq API Error' });
     }
 
     if (!data?.choices?.[0]?.message) {
-      console.error('xAI API Invalid Structure:', JSON.stringify(data));
+      console.error('Groq API Invalid Structure:', JSON.stringify(data));
       return res.status(502).json({ error: 'Invalid response structure from AI' });
     }
 
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Grok API Fatal Error:', error);
+    console.error('Groq API Fatal Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
