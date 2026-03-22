@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [
         {
           role: 'system',
-          content: 'Generate a short, personal greeting and dynamic study insight for the student. Use the context provided (tasks, time, userName) to make it highly relevant. Keep it under 25 words.',
+          content: 'Generate a short, personal greeting and dynamic study insight for the student. Use context (tasks, time, userName) to be relevant. Under 25 words.',
         },
         {
           role: 'user',

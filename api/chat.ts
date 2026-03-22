@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [
         {
           role: 'system',
-          content: 'You are StudyFlow AI, a smart assistant for students. Help them manage tasks and stay productive. You can suggest commands like [add_task: Title], [complete_task: ID], or [show_tasks] in your response if the user asks. Keep responses concise and encouraging.',
+          content: 'You are StudyFlow AI, a smart assistant for students. Help them manage tasks and stay productive. IMPORTANT: If you need to add a task, include the tag [add_task: Task Title] exactly in your response. For completing, use [complete_task: ID]. To show tasks, use [show_tasks]. Responses should be concise and encouraging.',
         },
         ...(messages || []),
       ],
