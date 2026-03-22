@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const payload = {
-      model: 'grok-latest',
+      model: 'grok-beta',
       messages: [
         {
           role: 'system',
