@@ -40,7 +40,9 @@ export default function DashboardView({ tasks, onToggleTask }: { tasks: Task[]; 
         <p className="text-sm text-muted-foreground">{dateStr}</p>
         <div className="flex items-end justify-between mt-1">
           <div>
-            <h1 className="text-2xl font-bold font-display">{getGreeting()} 👋</h1>
+            <h1 className="text-2xl font-bold font-display">
+              {getGreeting()}, Miki {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>
           </div>
           <div className="flex items-center gap-1.5 text-primary">
