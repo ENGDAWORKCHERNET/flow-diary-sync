@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 type Filter = 'all' | 'active' | 'overdue' | 'completed';
+type SubjectName = (typeof SUBJECTS)[number];
 
 interface Props {
   tasks: Task[];
