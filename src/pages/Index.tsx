@@ -24,7 +24,7 @@ export default function Index() {
   const [qDesc, setQDesc] = useState('');
   const [qDue, setQDue] = useState('');
   const [qPriority, setQPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [qSubject, setQSubject] = useState(SUBJECTS[0]);
+  const [qSubject, setQSubject] = useState<string>(SUBJECTS[0]);
 
   const updateTasks = useCallback((updater: (prev: Task[]) => Task[]) => {
     setTasks(prev => {

@@ -23,7 +23,7 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [subject, setSubject] = useState(SUBJECTS[0]);
+  const [subject, setSubject] = useState<string>(SUBJECTS[0]);
 
   const filtered = tasks.filter(t => {
     if (filter === 'active') return !t.completed;
