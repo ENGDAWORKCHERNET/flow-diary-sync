@@ -4,7 +4,9 @@ import {
   getCurrentClass, formatTime12, formatCountdown, loadTasks,
   saveTasks, isOverdue, getWeekProgress, type Task
 } from '@/lib/data';
-import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2, Bell, BellOff } from 'lucide-react';
+import { requestPermission, sendLocalNotification } from '@/lib/notifications';
+import { toast } from 'sonner';
 
 export default function DashboardView({ 
   tasks, 
@@ -17,10 +19,25 @@ export default function DashboardView({
 }) {
   const [now, setNow] = useState(new Date());
 
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    typeof window !== 'undefined' ? Notification.permission === 'granted' : false
+  );
+
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleEnableNotifications = async () => {
+    const granted = await requestPermission();
+    if (granted) {
+      setNotificationsEnabled(true);
+      toast.success("Notifications enabled!");
+      sendLocalNotification("Notifications Active", "You'll now receive updates from StudyFlow.");
+    } else {
+      toast.error("Notification permission denied.");
+    }
+  };
 
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -53,9 +70,20 @@ export default function DashboardView({
             </h1>
             {!aiGreeting && <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>}
           </div>
-          <div className="flex items-center gap-1.5 text-primary">
-            <Clock className="w-4 h-4" />
-            <span className="text-lg font-semibold font-display tabular-nums">{timeStr}</span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleEnableNotifications}
+              className={`p-2 rounded-xl transition-all ${notificationsEnabled ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-secondary'}`}
+              title={notificationsEnabled ? "Notifications Active" : "Enable Notifications"}
+            >
+              {notificationsEnabled ? <Bell className="w-4 h-4 fill-primary/20" /> : <BellOff className="w-4 h-4" />}
+            </button>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1.5 text-primary">
+                <Clock className="w-4 h-4" />
+                <span className="text-lg font-semibold font-display tabular-nums">{timeStr}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

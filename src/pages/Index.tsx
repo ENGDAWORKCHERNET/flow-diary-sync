@@ -5,6 +5,7 @@ import DashboardView from '@/components/StudyFlow/DashboardView';
 import ScheduleView from '@/components/StudyFlow/ScheduleView';
 import TasksView from '@/components/StudyFlow/TasksView';
 import AIAssistant from '@/components/StudyFlow/AIAssistant';
+import { sendLocalNotification } from '@/lib/notifications';
 import { Home, CalendarDays, ListChecks, Sun, Moon, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -79,9 +80,11 @@ export default function Index() {
         priority: 'medium',
         subject: SUBJECTS[0]
       });
+      sendLocalNotification("Task Added", `AI added: ${arg}`);
       setTab('tasks');
     } else if (cmd === 'complete_task' && arg) {
       toggleTask(arg);
+      sendLocalNotification("Task Completed", "AI marked a task as complete.");
     } else if (cmd === 'show_tasks') {
       setTab('tasks');
     }
