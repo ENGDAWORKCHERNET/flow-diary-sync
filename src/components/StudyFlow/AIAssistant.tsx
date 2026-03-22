@@ -48,6 +48,13 @@ export default function AIAssistant({ onCommand }: AIAssistantProps) {
       });
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        setMessages(prev => [...prev, { role: 'assistant', content: `AI Error: ${data.error?.message || data.error || 'Unknown error'}` }]);
+        setIsLoading(false);
+        return;
+      }
+
       const assistantMsg = data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
       
       setMessages(prev => [...prev, { role: 'assistant', content: assistantMsg }]);

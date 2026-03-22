@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-2',
+        model: 'grok-beta',
         messages: [
           {
             role: 'system',
@@ -36,10 +36,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const data = await response.json();
-    const greeting = data.choices[0]?.message?.content || `Good day, ${userName}! Let's crush those tasks.`;
+
+    if (!response.ok) {
+      console.error('xAI API Client Error (Insight):', data);
+      return res.status(response.status).json({ error: data.error || 'xAI API Error' });
+    }
+
+    if (!data.choices || !data.choices[0]) {
+      console.error('xAI API Unexpected Response (Insight):', data);
+      return res.status(502).json({ error: 'Invalid response from AI provider' });
+    }
+
+    const greeting = data.choices[0].message?.content || `Good day, ${userName}! Let's crush those tasks.`;
     return res.status(200).json({ greeting });
   } catch (error) {
-    console.error('Grok Insight Error:', error);
+    console.error('Grok Insight Server Error:', error);
     return res.status(500).json({ error: 'Failed to generate insight' });
   }
 }

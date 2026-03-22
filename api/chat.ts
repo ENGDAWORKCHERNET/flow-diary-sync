@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-2',
+        model: 'grok-beta',
         messages: [
           {
             role: 'system',
@@ -33,9 +33,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('xAI API Client Error:', data);
+      return res.status(response.status).json({ error: data.error || 'xAI API Error' });
+    }
+
+    if (!data.choices || !data.choices[0]) {
+      console.error('xAI API Unexpected Response:', data);
+      return res.status(502).json({ error: 'Invalid response from AI provider' });
+    }
+
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Grok API Error:', error);
+    console.error('Grok API Server Error:', error);
     return res.status(500).json({ error: 'Failed to communicate with Grok AI' });
   }
 }
