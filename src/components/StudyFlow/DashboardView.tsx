@@ -6,7 +6,15 @@ import {
 } from '@/lib/data';
 import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
 
-export default function DashboardView({ tasks, onToggleTask }: { tasks: Task[]; onToggleTask: (id: string) => void }) {
+export default function DashboardView({ 
+  tasks, 
+  onToggleTask, 
+  aiGreeting 
+}: { 
+  tasks: Task[]; 
+  onToggleTask: (id: string) => void;
+  aiGreeting?: string;
+}) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -40,10 +48,10 @@ export default function DashboardView({ tasks, onToggleTask }: { tasks: Task[]; 
         <p className="text-sm text-muted-foreground">{dateStr}</p>
         <div className="flex items-end justify-between mt-1">
           <div>
-            <h1 className="text-2xl font-bold font-display">
-              {getGreeting()}, Miki {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
+            <h1 className="text-xl font-bold font-display leading-tight">
+              {aiGreeting || `${getGreeting()}, Miki`} {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>
+            {!aiGreeting && <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>}
           </div>
           <div className="flex items-center gap-1.5 text-primary">
             <Clock className="w-4 h-4" />
