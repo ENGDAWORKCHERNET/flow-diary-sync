@@ -2,87 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --background: 30 25% 97%;
+    --foreground: 220 25% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 220 25% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 25% 10%;
+    --primary: 192 75% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 93%;
+    --secondary-foreground: 220 25% 10%;
+    --muted: 30 15% 90%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 15 85% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 88%;
+    --input: 30 15% 85%;
+    --ring: 192 75% 38%;
+    --radius: 1rem;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --gradient-start: 30 40% 95%;
+    --gradient-mid: 192 30% 93%;
+    --gradient-end: 270 20% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    --subject-math: 192 75% 38%;
+    --subject-web: 15 85% 58%;
+    --subject-stats: 152 60% 40%;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 222 30% 7%;
+    --foreground: 30 20% 95%;
+    --card: 222 25% 11%;
+    --card-foreground: 30 20% 95%;
+    --popover: 222 25% 11%;
+    --popover-foreground: 30 20% 95%;
+    --primary: 192 65% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 20% 15%;
+    --secondary-foreground: 30 20% 95%;
+    --muted: 222 15% 18%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 15 80% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 15% 18%;
+    --input: 222 15% 20%;
+    --ring: 192 65% 50%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --gradient-start: 222 35% 8%;
+    --gradient-mid: 240 25% 10%;
+    --gradient-end: 260 20% 9%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --subject-math: 192 65% 50%;
+    --subject-web: 15 80% 55%;
+    --subject-stats: 152 55% 45%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -98,8 +87,94 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .app-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)),
+      hsl(var(--gradient-mid)) 50%,
+      hsl(var(--gradient-end))
+    );
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .glass-card {
+    @apply rounded-2xl border border-border/50 shadow-lg;
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-card-solid {
+    @apply rounded-2xl border border-border/50 shadow-lg bg-card;
+  }
+
+  .subject-math {
+    background: hsl(var(--subject-math) / 0.15);
+    color: hsl(var(--subject-math));
+    border-left: 3px solid hsl(var(--subject-math));
+  }
+
+  .subject-web {
+    background: hsl(var(--subject-web) / 0.15);
+    color: hsl(var(--subject-web));
+    border-left: 3px solid hsl(var(--subject-web));
+  }
+
+  .subject-stats {
+    background: hsl(var(--subject-stats) / 0.15);
+    color: hsl(var(--subject-stats));
+    border-left: 3px solid hsl(var(--subject-stats));
+  }
+
+  .priority-high {
+    @apply bg-destructive/15 text-destructive;
+  }
+  .priority-medium {
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent));
+  }
+  .priority-low {
+    @apply bg-primary/15 text-primary;
+  }
+}
+
+@layer utilities {
+  .animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  .stagger-1 { animation-delay: 0.05s; animation-fill-mode: backwards; }
+  .stagger-2 { animation-delay: 0.1s; animation-fill-mode: backwards; }
+  .stagger-3 { animation-delay: 0.15s; animation-fill-mode: backwards; }
+  .stagger-4 { animation-delay: 0.2s; animation-fill-mode: backwards; }
+  .stagger-5 { animation-delay: 0.25s; animation-fill-mode: backwards; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
