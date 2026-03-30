@@ -35,6 +35,7 @@ export default function ScheduleView() {
                   <span className="font-medium text-sm">{c.subject}</span>
                   <span className="text-xs opacity-80 whitespace-nowrap ml-2">
                     {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
+                    {c.room && ` • ${c.room}`}
                   </span>
                 </div>
               ))}

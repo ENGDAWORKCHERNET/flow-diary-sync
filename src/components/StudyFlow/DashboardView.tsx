@@ -102,7 +102,10 @@ export default function DashboardView({
           {currentClass ? (
             <div className={`${currentClass.colorClass} rounded-xl p-3`}>
               <p className="font-semibold text-sm">{currentClass.subject}</p>
-              <p className="text-xs opacity-80">{formatTime12(currentClass.startTime)} – {formatTime12(currentClass.endTime)}</p>
+              <p className="text-xs opacity-80">
+                {formatTime12(currentClass.startTime)} – {formatTime12(currentClass.endTime)}
+                {currentClass.room && ` • ${currentClass.room}`}
+              </p>
             </div>
           ) : (
             <div className="flex items-center justify-between">
@@ -110,6 +113,7 @@ export default function DashboardView({
                 <p className="font-semibold">{nextClass.session.subject}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatTime12(nextClass.session.startTime)} – {formatTime12(nextClass.session.endTime)}
+                  {nextClass.session.room && ` • ${nextClass.session.room}`}
                 </p>
               </div>
               <div className="text-right">
@@ -133,7 +137,10 @@ export default function DashboardView({
             {todayClasses.map(c => (
               <div key={c.id} className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center`}>
                 <span className="font-medium text-sm">{c.subject}</span>
-                <span className="text-xs opacity-80">{formatTime12(c.startTime)} – {formatTime12(c.endTime)}</span>
+                <span className="text-xs opacity-80 whitespace-nowrap ml-2">
+                  {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
+                  {c.room && ` • ${c.room}`}
+                </span>
               </div>
             ))}
           </div>
