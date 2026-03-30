@@ -34,11 +34,13 @@ export const SUBJECT_COLOR: Record<string, string> = {
 export const SCHEDULE: ClassSession[] = [
   { id: '1', subject: 'Discrete Mathematics', day: 1, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math', room: 'LR201' },
   { id: '2', subject: 'Statistics & Probability', day: 1, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
+  { id: '7', subject: 'Web Design & Development I (Lab)', day: 2, startTime: '11:30', endTime: '13:00', colorClass: 'subject-web', room: 'Lab501' },
   { id: '3', subject: 'Web Design & Development I', day: 2, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
   { id: '4', subject: 'Web Design & Development I', day: 4, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
   { id: '5', subject: 'Statistics & Probability', day: 4, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
   { id: '6', subject: 'Discrete Mathematics', day: 6, startTime: '08:00', endTime: '09:30', colorClass: 'subject-math', room: 'LR601' },
 ];
+
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
