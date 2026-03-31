@@ -16,6 +16,8 @@ export default function ScheduleView() {
         const classes = SCHEDULE.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
         const isToday = day === today;
 
+        if (classes.length === 0) return null;
+
         return (
           <div key={day} className={`glass-card p-4 ${isToday ? 'ring-2 ring-primary/40' : ''}`}>
             <div className="flex items-center gap-2 mb-3">

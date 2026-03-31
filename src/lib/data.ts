@@ -39,6 +39,7 @@ export const SCHEDULE: ClassSession[] = [
   { id: '3', subject: 'SE2222 (Web Design & Development I)', day: 4, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
   { id: '4', subject: 'CC2135 (Statistics & Probability)', day: 4, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
   { id: '5', subject: 'CC2131 (Mathematics)', day: 6, startTime: '08:00', endTime: '09:30', colorClass: 'subject-math', room: 'LR601' },
+  { id: '8', subject: 'SE2222 (Web Design & Development I)', day: 6, startTime: '09:45', endTime: '11:15', colorClass: 'subject-web', room: 'LR202' },
   { id: '6', subject: 'SE2222 (Web Design & Development I)', day: 6, startTime: '11:30', endTime: '13:00', colorClass: 'subject-web', room: 'Lab501', isLab: true, labGroup: 'Grp 2' },
 ];
 
