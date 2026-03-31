@@ -101,7 +101,14 @@ export default function DashboardView({
           </div>
           {currentClass ? (
             <div className={`${currentClass.colorClass} rounded-xl p-3`}>
-              <p className="font-semibold text-sm">{currentClass.subject}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-sm">{currentClass.subject}</p>
+                {currentClass.isLab && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-1.5 py-0.5 rounded-sm">
+                    LAB • {currentClass.labGroup}
+                  </span>
+                )}
+              </div>
               <p className="text-xs opacity-80">
                 {formatTime12(currentClass.startTime)} – {formatTime12(currentClass.endTime)}
                 {currentClass.room && ` • ${currentClass.room}`}
@@ -110,7 +117,14 @@ export default function DashboardView({
           ) : (
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{nextClass.session.subject}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold">{nextClass.session.subject}</p>
+                  {nextClass.session.isLab && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-black/10 dark:bg-black/40 px-1.5 py-0.5 rounded-sm">
+                      LAB • {nextClass.session.labGroup}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {formatTime12(nextClass.session.startTime)} – {formatTime12(nextClass.session.endTime)}
                   {nextClass.session.room && ` • ${nextClass.session.room}`}
@@ -136,7 +150,14 @@ export default function DashboardView({
           <div className="space-y-2">
             {todayClasses.map(c => (
               <div key={c.id} className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center`}>
-                <span className="font-medium text-sm">{c.subject}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">{c.subject}</span>
+                  {c.isLab && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-1.5 py-0.5 rounded-sm">
+                      LAB
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs opacity-80 whitespace-nowrap ml-2">
                   {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
                   {c.room && ` • ${c.room}`}

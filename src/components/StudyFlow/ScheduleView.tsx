@@ -1,6 +1,6 @@
 import { SCHEDULE, DAY_NAMES, DAY_SHORT, formatTime12 } from '@/lib/data';
 
-const DAYS_WITH_CLASSES = [1, 2, 4, 6]; // Mon, Tue, Thu, Sat
+const DAYS_WITH_CLASSES = [1, 2, 3, 4, 5, 6]; // Mon to Sat
 
 export default function ScheduleView() {
   const today = new Date().getDay();
@@ -29,17 +29,31 @@ export default function ScheduleView() {
                 {isToday && <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Today</p>}
               </div>
             </div>
-            <div className="space-y-2">
-              {classes.map(c => (
-                <div key={c.id} className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center`}>
-                  <span className="font-medium text-sm">{c.subject}</span>
-                  <span className="text-xs opacity-80 whitespace-nowrap ml-2">
-                    {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
-                    {c.room && ` • ${c.room}`}
-                  </span>
-                </div>
-              ))}
-            </div>
+            
+            {classes.length === 0 ? (
+              <div className="p-3 text-center rounded-xl bg-secondary/50 border border-border/50">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">No Classes</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {classes.map(c => (
+                  <div key={c.id} className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center`}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{c.subject}</span>
+                      {c.isLab && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-2 py-0.5 rounded-md shadow-sm">
+                          LAB • {c.labGroup}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs opacity-80 whitespace-nowrap ml-2">
+                      {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
+                      {c.room && ` • ${c.room}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

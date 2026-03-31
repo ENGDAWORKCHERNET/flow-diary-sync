@@ -6,6 +6,8 @@ export interface ClassSession {
   endTime: string; // "15:30"
   colorClass: string;
   room?: string;
+  isLab?: boolean;
+  labGroup?: string;
 }
 
 export interface Task {
@@ -20,25 +22,24 @@ export interface Task {
 }
 
 export const SUBJECTS = [
-  'Discrete Mathematics',
-  'Web Design & Development I',
-  'Statistics & Probability',
+  'CC2131 (Mathematics)',
+  'SE2222 (Web Design & Development I)',
+  'CC2135 (Statistics & Probability)',
 ] as const;
 
 export const SUBJECT_COLOR: Record<string, string> = {
-  'Discrete Mathematics': 'subject-math',
-  'Web Design & Development I': 'subject-web',
-  'Statistics & Probability': 'subject-stats',
+  'CC2131 (Mathematics)': 'subject-math',
+  'SE2222 (Web Design & Development I)': 'subject-web',
+  'CC2135 (Statistics & Probability)': 'subject-stats',
 };
 
 export const SCHEDULE: ClassSession[] = [
-  { id: '1', subject: 'Discrete Mathematics', day: 1, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math', room: 'LR201' },
-  { id: '2', subject: 'Statistics & Probability', day: 1, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
-  { id: '7', subject: 'Web Design & Development I (Lab)', day: 2, startTime: '11:30', endTime: '13:00', colorClass: 'subject-web', room: 'Lab501' },
-  { id: '3', subject: 'Web Design & Development I', day: 2, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
-  { id: '4', subject: 'Web Design & Development I', day: 4, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
-  { id: '5', subject: 'Statistics & Probability', day: 4, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
-  { id: '6', subject: 'Discrete Mathematics', day: 6, startTime: '08:00', endTime: '09:30', colorClass: 'subject-math', room: 'LR601' },
+  { id: '1', subject: 'CC2131 (Mathematics)', day: 1, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math', room: 'LR201' },
+  { id: '2', subject: 'CC2135 (Statistics & Probability)', day: 1, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
+  { id: '3', subject: 'SE2222 (Web Design & Development I)', day: 4, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR202' },
+  { id: '4', subject: 'CC2135 (Statistics & Probability)', day: 4, startTime: '15:45', endTime: '17:15', colorClass: 'subject-stats', room: 'LR302' },
+  { id: '5', subject: 'CC2131 (Mathematics)', day: 6, startTime: '08:00', endTime: '09:30', colorClass: 'subject-math', room: 'LR601' },
+  { id: '6', subject: 'SE2222 (Web Design & Development I)', day: 6, startTime: '11:30', endTime: '13:00', colorClass: 'subject-web', room: 'Lab501', isLab: true, labGroup: 'Grp 2' },
 ];
 
 
