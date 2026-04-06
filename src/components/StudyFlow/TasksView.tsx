@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { type Task, SUBJECTS, SUBJECT_COLOR, isOverdue } from '@/lib/data';
-import { CheckCircle2, Plus, Trash2, X } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import TaskDetailView from './TaskDetailView';
 
 type Filter = 'all' | 'active' | 'overdue' | 'completed';
 type SubjectName = (typeof SUBJECTS)[number];
@@ -14,11 +15,13 @@ interface Props {
   onToggleTask: (id: string) => void;
   onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => void;
   onDeleteTask: (id: string) => void;
+  onSaveSession: (taskId: string, duration: number) => void;
 }
 
-export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask }: Props) {
+export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask, onSaveSession }: Props) {
   const [filter, setFilter] = useState<Filter>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -34,6 +37,8 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
+
+  const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,9 +142,10 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
         {filtered.map(t => (
           <div
             key={t.id}
-            className={`glass-card p-4 flex items-start gap-3 transition-opacity ${t.completed ? 'opacity-60' : ''}`}
+            onClick={() => setSelectedTaskId(t.id)}
+            className={`cursor-pointer active:scale-[0.98] glass-card p-4 flex items-start gap-3 transition-all ${t.completed ? 'opacity-60' : 'hover:shadow-md hover:border-primary/20'}`}
           >
-            <button onClick={() => onToggleTask(t.id)} className="mt-0.5 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onToggleTask(t.id); }} className="mt-0.5 shrink-0">
               <CheckCircle2 className={`w-5 h-5 transition-colors ${t.completed ? 'text-primary' : 'text-muted-foreground/30'}`} />
             </button>
             <div className="flex-1 min-w-0">
@@ -159,12 +165,27 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
                 </span>
               </div>
             </div>
-            <button onClick={() => onDeleteTask(t.id)} className="shrink-0 text-muted-foreground/40 hover:text-destructive transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }} className="shrink-0 text-muted-foreground/40 hover:text-destructive transition-colors">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ))}
       </div>
+
+      <Dialog open={!!selectedTaskId} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
+        <DialogContent className="rounded-2xl max-h-[85vh] overflow-y-auto w-[92vw] sm:max-w-md">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Task Details</DialogTitle>
+          </DialogHeader>
+          {selectedTask && (
+            <TaskDetailView 
+              task={selectedTask} 
+              onSaveSession={onSaveSession}
+              onToggleComplete={(id) => { onToggleTask(id); }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

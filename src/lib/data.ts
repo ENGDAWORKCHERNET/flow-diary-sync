@@ -10,6 +10,11 @@ export interface ClassSession {
   labGroup?: string;
 }
 
+export interface StudySession {
+  startTime: string;
+  duration: number; // in seconds
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -19,6 +24,9 @@ export interface Task {
   subject: string;
   completed: boolean;
   createdAt: string;
+  totalTimeSpent?: number;
+  sessions?: StudySession[];
+  completedAt?: string;
 }
 
 export const SUBJECTS = [

@@ -71,6 +71,20 @@ export default function Index() {
     updateTasks(prev => prev.filter(t => t.id !== id));
   }, [updateTasks]);
 
+  const handleSaveSession = useCallback((taskId: string, duration: number) => {
+    updateTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        const session = { startTime: new Date().toISOString(), duration };
+        return {
+          ...t,
+          totalTimeSpent: (t.totalTimeSpent || 0) + duration,
+          sessions: [...(t.sessions || []), session]
+        };
+      }
+      return t;
+    }));
+  }, [updateTasks]);
+
   const handleAICommand = useCallback((cmd: string, arg?: string) => {
     if (cmd === 'add_task' && arg) {
       addTask({
@@ -123,7 +137,7 @@ export default function Index() {
       <main className="px-4 pb-24 max-w-lg mx-auto">
         {tab === 'dashboard' && <DashboardView tasks={tasks} onToggleTask={toggleTask} aiGreeting={aiGreeting} />}
         {tab === 'schedule' && <ScheduleView />}
-        {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} />}
+        {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
       </main>
 
       <AIAssistant onCommand={handleAICommand} />
