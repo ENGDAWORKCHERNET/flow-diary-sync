@@ -1,19 +1,50 @@
-import { SCHEDULE, DAY_NAMES, DAY_SHORT, formatTime12 } from '@/lib/data';
+import { useState } from 'react';
+import { DAY_NAMES, DAY_SHORT, formatTime12, type ClassSession } from '@/lib/data';
+import { useSchedule } from '@/context/ScheduleContext';
+import ClassFormModal from './ClassFormModal';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
-const DAYS_WITH_CLASSES = [1, 2, 3, 4, 5, 6]; // Mon to Sat
+const DAYS_WITH_CLASSES = [1, 2, 3, 4, 5, 6, 0]; // Mon to Sun
 
 export default function ScheduleView() {
+  const { schedule } = useSchedule();
   const today = new Date().getDay();
+
+  const [formOpen, setFormOpen] = useState<boolean>(false);
+  const [editingSession, setEditingSession] = useState<ClassSession | null>(null);
+
+  const handleOpenAdd = () => {
+    setEditingSession(null);
+    setFormOpen(true);
+  };
+
+  const handleOpenEdit = (session: ClassSession) => {
+    setEditingSession(session);
+    setFormOpen(true);
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="glass-card p-5">
-        <h2 className="text-xl font-bold font-display">Weekly Schedule</h2>
-        <p className="text-sm text-muted-foreground mt-1">Your class timetable</p>
+      <div className="glass-card p-5 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold font-display">Weekly Schedule</h2>
+          <p className="text-sm text-muted-foreground mt-1">Your class timetable</p>
+        </div>
+        <Button
+          onClick={handleOpenAdd}
+          size="sm"
+          className="rounded-xl flex items-center gap-1.5 shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Class</span>
+        </Button>
       </div>
 
       {DAYS_WITH_CLASSES.map(day => {
-        const classes = SCHEDULE.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+        const classes = schedule
+          .filter(s => s.day === day)
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
         const isToday = day === today;
 
         if (classes.length === 0) return null;
@@ -21,44 +52,55 @@ export default function ScheduleView() {
         return (
           <div key={day} className={`glass-card p-4 ${isToday ? 'ring-2 ring-primary/40' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${
-                isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${
+                  isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                }`}
+              >
                 {DAY_SHORT[day]}
               </div>
               <div>
                 <p className="font-semibold text-sm">{DAY_NAMES[day]}</p>
-                {isToday && <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Today</p>}
+                {isToday && (
+                  <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Today</p>
+                )}
               </div>
             </div>
-            
-            {classes.length === 0 ? (
-              <div className="p-3 text-center rounded-xl bg-secondary/50 border border-border/50">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">No Classes</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {classes.map(c => (
-                  <div key={c.id} className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center`}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{c.subject}</span>
-                      {c.isLab && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-2 py-0.5 rounded-md shadow-sm">
-                          LAB • {c.labGroup}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs opacity-80 whitespace-nowrap ml-2">
-                      {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
-                      {c.room && ` • ${c.room}`}
-                    </span>
+
+            <div className="space-y-2">
+              {classes.map(c => (
+                <div
+                  key={c.id}
+                  onClick={() => handleOpenEdit(c)}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to edit or remove class"
+                  className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{c.subject}</span>
+                    {c.isLab && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-2 py-0.5 rounded-md shadow-sm">
+                        LAB • {c.labGroup}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                  <span className="text-xs opacity-80 whitespace-nowrap ml-2">
+                    {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
+                    {c.room && ` • ${c.room}`}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         );
       })}
+
+      <ClassFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editingSession={editingSession}
+      />
     </div>
   );
 }

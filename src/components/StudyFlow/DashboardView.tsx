@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  getGreeting, getDailyQuote, getTodayClasses, getNextClass,
-  getCurrentClass, formatTime12, formatCountdown, loadTasks,
+  getGreeting, getDailyQuote, formatTime12, formatCountdown, loadTasks,
   saveTasks, isOverdue, getWeekProgress, type Task
 } from '@/lib/data';
+import { useSchedule } from '@/context/ScheduleContext';
 import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2, Bell, BellOff } from 'lucide-react';
 import { requestPermission, sendLocalNotification } from '@/lib/notifications';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ export default function DashboardView({
   onToggleTask: (id: string) => void;
   aiGreeting?: string;
 }) {
+  const { getTodayClasses, getNextClass, getCurrentClass } = useSchedule();
   const [now, setNow] = useState(new Date());
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -43,8 +44,8 @@ export default function DashboardView({
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const todayClasses = getTodayClasses();
-  const nextClass = getNextClass();
-  const currentClass = getCurrentClass();
+  const nextClass = getNextClass(now);
+  const currentClass = getCurrentClass(now);
   const quote = getDailyQuote();
   const progress = getWeekProgress(tasks);
 

@@ -82,18 +82,93 @@ export function formatTime12(time: string): string {
   return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
 }
 
-export function getTodayClasses(): ClassSession[] {
-  const today = new Date().getDay();
-  return SCHEDULE.filter(s => s.day === today);
+export const SCHEDULE_KEY = 'studyflow_schedule';
+
+export interface PeriodPreset {
+  name: string;
+  label: string;
+  startTime: string;
+  endTime: string;
 }
 
-export function getNextClass(): { session: ClassSession; minutesUntil: number } | null {
-  const now = new Date();
+export const PERIOD_PRESETS: PeriodPreset[] = [
+  { name: 'Period 1', label: 'Period 1 (08:00 – 09:30 AM)', startTime: '08:00', endTime: '09:30' },
+  { name: 'Period 2', label: 'Period 2 (09:45 – 11:15 AM)', startTime: '09:45', endTime: '11:15' },
+  { name: 'Period 3', label: 'Period 3 (11:30 AM – 01:00 PM)', startTime: '11:30', endTime: '13:00' },
+  { name: 'Period 4', label: 'Period 4 (02:00 – 03:30 PM)', startTime: '14:00', endTime: '15:30' },
+  { name: 'Period 5', label: 'Period 5 (03:30 – 05:00 PM)', startTime: '15:30', endTime: '17:00' },
+];
+
+export function loadSchedule(): ClassSession[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(SCHEDULE_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return SCHEDULE;
+}
+
+export function saveSchedule(schedule: ClassSession[]): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
+    }
+  } catch {}
+}
+
+export function checkScheduleOverlap(
+  schedule: ClassSession[],
+  candidate: { day: number; startTime: string; endTime: string; id?: string }
+): { hasOverlap: boolean; overlappingSession?: ClassSession; error?: string } {
+  if (!candidate.startTime || !candidate.endTime) {
+    return { hasOverlap: true, error: 'Start time and end time are required.' };
+  }
+  if (candidate.startTime >= candidate.endTime) {
+    return { hasOverlap: true, error: 'End time must be after start time.' };
+  }
+
+  const [candStartH, candStartM] = candidate.startTime.split(':').map(Number);
+  const [candEndH, candEndM] = candidate.endTime.split(':').map(Number);
+  const candStartMin = candStartH * 60 + candStartM;
+  const candEndMin = candEndH * 60 + candEndM;
+
+  for (const session of schedule) {
+    if (candidate.id && session.id === candidate.id) continue;
+    if (session.day !== candidate.day) continue;
+
+    const [sh, sm] = session.startTime.split(':').map(Number);
+    const [eh, em] = session.endTime.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+
+    if (candStartMin < endMin && candEndMin > startMin) {
+      return {
+        hasOverlap: true,
+        overlappingSession: session,
+        error: `Time overlaps with ${session.subject} (${formatTime12(session.startTime)} – ${formatTime12(session.endTime)}).`,
+      };
+    }
+  }
+
+  return { hasOverlap: false };
+}
+
+export function getTodayClasses(schedule?: ClassSession[]): ClassSession[] {
+  const currentSchedule = schedule || loadSchedule();
+  const today = new Date().getDay();
+  return currentSchedule.filter(s => s.day === today);
+}
+
+export function getNextClass(schedule?: ClassSession[], customNow?: Date): { session: ClassSession; minutesUntil: number } | null {
+  const currentSchedule = schedule || loadSchedule();
+  const now = customNow || new Date();
   const today = now.getDay();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   // Check today's remaining classes
-  const todayClasses = SCHEDULE.filter(s => s.day === today);
+  const todayClasses = currentSchedule.filter(s => s.day === today);
   for (const s of todayClasses) {
     const [h, m] = s.startTime.split(':').map(Number);
     const startMin = h * 60 + m;
@@ -105,7 +180,7 @@ export function getNextClass(): { session: ClassSession; minutesUntil: number } 
   // Check future days (up to 7 days ahead)
   for (let d = 1; d <= 7; d++) {
     const checkDay = (today + d) % 7;
-    const dayClasses = SCHEDULE.filter(s => s.day === checkDay).sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const dayClasses = currentSchedule.filter(s => s.day === checkDay).sort((a, b) => a.startTime.localeCompare(b.startTime));
     if (dayClasses.length > 0) {
       const s = dayClasses[0];
       const [h, m] = s.startTime.split(':').map(Number);
@@ -118,12 +193,13 @@ export function getNextClass(): { session: ClassSession; minutesUntil: number } 
   return null;
 }
 
-export function getCurrentClass(): ClassSession | null {
-  const now = new Date();
+export function getCurrentClass(schedule?: ClassSession[], customNow?: Date): ClassSession | null {
+  const currentSchedule = schedule || loadSchedule();
+  const now = customNow || new Date();
   const today = now.getDay();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  return SCHEDULE.find(s => {
+  return currentSchedule.find(s => {
     if (s.day !== today) return false;
     const [sh, sm] = s.startTime.split(':').map(Number);
     const [eh, em] = s.endTime.split(':').map(Number);
