@@ -46,7 +46,7 @@ declare global {
 // Constants
 // ---------------------------------------------------------------------------
 
-const GA_MEASUREMENT_ID: string =
+export const GA_MEASUREMENT_ID: string =
   (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) ??
   'G-MF5C3GZFY9';
 
@@ -59,10 +59,20 @@ const DEBUG_LOGGING: boolean = import.meta.env.VITE_GA_DEBUG === '1';
 
 let _initialized = false;
 
-export function initAnalytics(): void {
-  // Guard: only run in a real browser production context.
+export interface InitAnalyticsOptions {
+  /**
+   * Force initialization regardless of import.meta.env.PROD.
+   * Useful for unit testing production behaviors in test environments.
+   */
+  force?: boolean;
+}
+
+export function initAnalytics(options?: InitAnalyticsOptions): void {
+  const isProduction = options?.force ?? import.meta.env.PROD;
+
+  // Guard: only run in a real browser production context (or when forced for testing).
   if (
-    !import.meta.env.PROD ||          // skip in dev / test
+    !isProduction ||                   // skip in dev / test
     _initialized ||                    // skip if already initialised
     typeof window === 'undefined' ||   // skip in SSR / Node test env
     !GA_MEASUREMENT_ID                 // skip if ID is missing/empty
@@ -87,11 +97,28 @@ export function initAnalytics(): void {
   // there is no duplicate on first load.
   window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false });
 
+  // Dynamically load the Google Tag Manager script asynchronously only in production.
+  if (typeof document !== 'undefined') {
+    const existingScript = document.querySelector(
+      `script[src*="googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}"]`
+    );
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+      document.head.appendChild(script);
+    }
+  }
+
   _initialized = true;
 
   if (DEBUG_LOGGING) {
     console.debug('[Analytics] Initialised with ID:', GA_MEASUREMENT_ID);
   }
+}
+
+export function isAnalyticsInitialized(): boolean {
+  return _initialized;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,8 +128,11 @@ export function initAnalytics(): void {
 /**
  * Track a virtual or real page view.
  * Safe to call in development — becomes a no-op when analytics is disabled.
+ *
+ * @param path - Virtual or physical path starting with '/' (e.g. '/schedule')
+ * @param title - Optional page title. Defaults to document.title if omitted.
  */
-export function trackPageView(path: string): void {
+export function trackPageView(path: string, title?: string): void {
   if (!_initialized || typeof window === 'undefined' || typeof window.gtag !== 'function') {
     if (DEBUG_LOGGING) {
       console.debug('[Analytics] trackPageView (no-op):', path);
@@ -110,14 +140,23 @@ export function trackPageView(path: string): void {
     return;
   }
 
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const pageTitle = title || (typeof document !== 'undefined' ? document.title : '');
+
+  if (title && typeof document !== 'undefined') {
+    document.title = title;
+  }
+
+  const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+
   window.gtag('event', 'page_view', {
-    page_path: path,
-    page_location: window.location.origin + path,
-    page_title: document.title,
+    page_path: normalizedPath,
+    page_location: origin + normalizedPath,
+    page_title: pageTitle,
   });
 
   if (DEBUG_LOGGING) {
-    console.debug('[Analytics] trackPageView:', path);
+    console.debug('[Analytics] trackPageView:', normalizedPath, pageTitle);
   }
 }
 
@@ -143,4 +182,10 @@ export function trackEvent(name: string, params?: Record<string, unknown>): void
 // Exported for testing only — do not rely on this in application code.
 export function _resetForTesting(): void {
   _initialized = false;
+  if (typeof document !== 'undefined') {
+    const scripts = document.querySelectorAll(
+      `script[src*="googletagmanager.com/gtag/js"]`
+    );
+    scripts.forEach((s) => s.remove());
+  }
 }

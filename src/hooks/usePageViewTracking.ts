@@ -28,10 +28,17 @@ import { useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/analytics';
 
 // Maps tab keys to user-friendly virtual paths that appear in GA4 reports.
-const TAB_PATHS: Record<string, string> = {
+export const TAB_PATHS: Record<string, string> = {
   dashboard: '/',
   schedule: '/schedule',
   tasks: '/tasks',
+};
+
+// Maps tab keys to descriptive page titles for GA4 reports.
+export const TAB_TITLES: Record<string, string> = {
+  dashboard: 'StudyFlow — Smart Student Dashboard',
+  schedule: 'StudyFlow — Schedule',
+  tasks: 'StudyFlow — Tasks',
 };
 
 /**
@@ -81,6 +88,7 @@ export function usePageViewTracking(tab?: string): void {
     lastTrackedTab.current = tab;
 
     const virtualPath = TAB_PATHS[tab] ?? `/${tab}`;
-    trackPageView(virtualPath);
+    const virtualTitle = TAB_TITLES[tab] ?? document.title;
+    trackPageView(virtualPath, virtualTitle);
   }, [tab]);
 }

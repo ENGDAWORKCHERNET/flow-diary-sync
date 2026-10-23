@@ -36,6 +36,9 @@ export default function Index() {
   const [fabOpen, setFabOpen] = useState(false);
   const [installPromptOpen, setInstallPromptOpen] = useState(false);
 
+  // Track page views on initial load and tab switches
+  usePageViewTracking(tab);
+
   const availableSubjects = Array.from(
     new Set([...schedule.map(s => s.subject).filter(Boolean), ...SUBJECTS])
   );

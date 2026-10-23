@@ -1,12 +1,16 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { usePageViewTracking } from "@/hooks/usePageViewTracking";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
+    document.title = "StudyFlow — 404 Not Found";
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
   }, [location.pathname]);
+
+  usePageViewTracking();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
