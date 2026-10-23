@@ -5,8 +5,10 @@ import DashboardView from '@/components/StudyFlow/DashboardView';
 import ScheduleView from '@/components/StudyFlow/ScheduleView';
 import TasksView from '@/components/StudyFlow/TasksView';
 import AIAssistant from '@/components/StudyFlow/AIAssistant';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { sendLocalNotification } from '@/lib/notifications';
-import { Home, CalendarDays, ListChecks, Sun, Moon, Plus } from 'lucide-react';
+import { Home, CalendarDays, ListChecks, Sun, Moon, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +21,9 @@ export default function Index() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [tasks, setTasks] = useState<Task[]>(() => loadTasks());
   const { theme, setTheme } = useTheme();
+  const { isStandalone } = usePWAInstall();
   const [fabOpen, setFabOpen] = useState(false);
+  const [installPromptOpen, setInstallPromptOpen] = useState(false);
 
   // Quick add form state
   const [qTitle, setQTitle] = useState('');
@@ -125,12 +129,24 @@ export default function Index() {
         <h1 className="text-lg font-bold font-display tracking-tight">
           Study<span className="text-primary">Flow</span>
         </h1>
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:bg-secondary transition-colors"
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {!isStandalone && (
+            <button
+              onClick={() => setInstallPromptOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl glass-card flex items-center gap-1.5 text-xs font-semibold text-primary hover:bg-secondary transition-all active:scale-95 shadow-sm"
+              title="Download & Install App"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install App</span>
+            </button>
+          )}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:bg-secondary transition-colors"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
       </header>
 
       {/* Content */}
@@ -211,6 +227,12 @@ export default function Index() {
           })}
         </div>
       </nav>
+
+      {/* PWA Download / Install Pop-Up */}
+      <PWAInstallPrompt
+        forceOpen={installPromptOpen}
+        onOpenChange={setInstallPromptOpen}
+      />
     </div>
   );
 }

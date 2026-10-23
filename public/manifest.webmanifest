@@ -1,22 +1,55 @@
 {
+  "id": "/",
   "name": "StudyFlow",
   "short_name": "StudyFlow",
-  "description": "Smart student productivity dashboard",
+  "description": "Smart student productivity dashboard for managing classes, tasks, and deadlines.",
   "display": "standalone",
   "start_url": "/",
+  "scope": "/",
   "theme_color": "#0f172a",
   "background_color": "#020617",
   "orientation": "portrait",
+  "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/icon-192.png?v=2",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png?v=2",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Weekly Schedule",
+      "short_name": "Schedule",
+      "description": "View your class timetable",
+      "url": "/?tab=schedule",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Tasks",
+      "short_name": "Tasks",
+      "description": "View and manage tasks",
+      "url": "/?tab=tasks",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
