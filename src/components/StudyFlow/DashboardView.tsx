@@ -11,11 +11,9 @@ import { toast } from 'sonner';
 export default function DashboardView({ 
   tasks, 
   onToggleTask, 
-  aiGreeting 
 }: { 
   tasks: Task[]; 
   onToggleTask: (id: string) => void;
-  aiGreeting?: string;
 }) {
   const { getTodayClasses, getNextClass, getCurrentClass, schedule } = useSchedule();
   const [now, setNow] = useState(new Date());
@@ -67,9 +65,9 @@ export default function DashboardView({
         <div className="flex items-end justify-between mt-1">
           <div>
             <h1 className="text-xl font-bold font-display leading-tight">
-              {aiGreeting || `${getGreeting()}!`} {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
+              {getGreeting()}! {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
             </h1>
-            {!aiGreeting && <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>}
+            <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>
           </div>
           <div className="flex items-center gap-3">
             <button 

@@ -1,13 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { loadTasks, saveTasks, type Task } from '@/lib/data';
 import DashboardView from '@/components/StudyFlow/DashboardView';
 import ScheduleView from '@/components/StudyFlow/ScheduleView';
 import TasksView from '@/components/StudyFlow/TasksView';
-import AIAssistant from '@/components/StudyFlow/AIAssistant';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { sendLocalNotification } from '@/lib/notifications';
 import { Home, CalendarDays, ListChecks, Sun, Moon, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,29 +35,6 @@ export default function Index() {
   const [qDue, setQDue] = useState('');
   const [qPriority, setQPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [qSubject, setQSubject] = useState<string>('General');
-  const [aiGreeting, setAiGreeting] = useState<string>('');
-
-  useEffect(() => {
-    // Fetch AI insight
-    const fetchInsight = async () => {
-      try {
-        const response = await fetch('/api/insight', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tasks: tasks.slice(0, 5),
-            time: new Date().toLocaleTimeString(),
-            userName: 'Miki'
-          })
-        });
-        const data = await response.json();
-        setAiGreeting(data.greeting);
-      } catch (e) {
-        console.error('Failed to fetch AI insight');
-      }
-    };
-    fetchInsight();
-  }, []);
 
   const updateTasks = useCallback((updater: (prev: Task[]) => Task[]) => {
     setTasks(prev => {
@@ -95,30 +70,11 @@ export default function Index() {
     }));
   }, [updateTasks]);
 
-  const handleAICommand = useCallback((cmd: string, arg?: string) => {
-    if (cmd === 'add_task' && arg) {
-      addTask({
-        title: arg,
-        description: 'Added via StudyFlow AI',
-        dueDate: new Date(Date.now() + 86400000).toISOString(),
-        priority: 'medium',
-        subject: SUBJECTS[0]
-      });
-      sendLocalNotification("Task Added", `AI added: ${arg}`);
-      setTab('tasks');
-    } else if (cmd === 'complete_task' && arg) {
-      toggleTask(arg);
-      sendLocalNotification("Task Completed", "AI marked a task as complete.");
-    } else if (cmd === 'show_tasks') {
-      setTab('tasks');
-    }
-  }, [addTask, toggleTask]);
-
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!qTitle.trim() || !qDue) return;
     addTask({ title: qTitle.trim(), description: qDesc.trim(), dueDate: new Date(qDue).toISOString(), priority: qPriority, subject: qSubject });
-    setQTitle(''); setQDesc(''); setQDue(''); setQPriority('medium'); setQSubject(SUBJECTS[0]);
+    setQTitle(''); setQDesc(''); setQDue(''); setQPriority('medium'); setQSubject(availableSubjects[0] || 'General');
     setFabOpen(false);
   };
 
@@ -157,12 +113,10 @@ export default function Index() {
 
       {/* Content */}
       <main className="px-4 pb-24 max-w-lg mx-auto">
-        {tab === 'dashboard' && <DashboardView tasks={tasks} onToggleTask={toggleTask} aiGreeting={aiGreeting} />}
+        {tab === 'dashboard' && <DashboardView tasks={tasks} onToggleTask={toggleTask} />}
         {tab === 'schedule' && <ScheduleView />}
         {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
       </main>
-
-      <AIAssistant onCommand={handleAICommand} />
 
       {/* FAB */}
       <Dialog open={fabOpen} onOpenChange={setFabOpen}>
