@@ -1,11 +1,11 @@
 import { useState, useCallback, lazy, Suspense } from 'react';
-import { useTheme } from 'next-themes';
+import { ThemePicker } from '@/components/ThemePicker';
 import { loadTasks, saveTasks, type Task } from '@/lib/data';
 import DashboardView from '@/components/StudyFlow/DashboardView';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { usePageViewTracking } from '@/hooks/usePageViewTracking';
-import { Home, CalendarDays, ListChecks, Sun, Moon, Plus, Download } from 'lucide-react';
+import { Home, CalendarDays, ListChecks, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,6 @@ export default function Index() {
   const { schedule } = useSchedule();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [tasks, setTasks] = useState<Task[]>(() => loadTasks());
-  const { theme, setTheme } = useTheme();
   const { isStandalone } = usePWAInstall();
   const [fabOpen, setFabOpen] = useState(false);
   const [installPromptOpen, setInstallPromptOpen] = useState(false);
@@ -116,12 +115,7 @@ export default function Index() {
               <span>Install App</span>
             </button>
           )}
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:bg-secondary transition-colors"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          <ThemePicker />
         </div>
       </header>
 
