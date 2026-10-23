@@ -1,9 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useTheme } from 'next-themes';
 import { loadTasks, saveTasks, type Task } from '@/lib/data';
 import DashboardView from '@/components/StudyFlow/DashboardView';
-import ScheduleView from '@/components/StudyFlow/ScheduleView';
-import TasksView from '@/components/StudyFlow/TasksView';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Home, CalendarDays, ListChecks, Sun, Moon, Plus, Download } from 'lucide-react';
@@ -13,6 +11,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SUBJECTS, getSubjectColor } from '@/lib/data';
 import { useSchedule } from '@/context/ScheduleContext';
+
+// Lazy-load heavier views — only downloaded when the user taps that tab
+const ScheduleView = lazy(() => import('@/components/StudyFlow/ScheduleView'));
+const TasksView    = lazy(() => import('@/components/StudyFlow/TasksView'));
+
+function TabSpinner() {
+  return (
+    <div className="flex items-center justify-center py-20 text-muted-foreground">
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 type Tab = 'dashboard' | 'schedule' | 'tasks';
 
@@ -114,8 +124,10 @@ export default function Index() {
       {/* Content */}
       <main className="px-4 pb-24 max-w-lg mx-auto">
         {tab === 'dashboard' && <DashboardView tasks={tasks} onToggleTask={toggleTask} />}
-        {tab === 'schedule' && <ScheduleView />}
-        {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
+        <Suspense fallback={<TabSpinner />}>
+          {tab === 'schedule' && <ScheduleView />}
+          {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
+        </Suspense>
       </main>
 
       {/* FAB */}

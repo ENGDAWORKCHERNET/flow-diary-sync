@@ -64,4 +64,27 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Target modern browsers — smaller output, faster parse on mobile
+    target: "es2015",
+    rollupOptions: {
+      output: {
+        // Split stable vendor code into separate chunks so the browser
+        // can cache them independently across deployments
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-radix": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-select",
+            "@radix-ui/react-label",
+          ],
+          "vendor-ui": ["lucide-react", "next-themes", "sonner", "class-variance-authority", "clsx", "tailwind-merge"],
+        },
+      },
+    },
+  },
 }));
+
