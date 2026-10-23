@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, Share, PlusSquare, Zap, WifiOff, Bell, Smartphone, Check } from 'lucide-react';
+import { Download, Share, PlusSquare, Zap, WifiOff, Bell, Smartphone, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PWAInstallPromptProps {
@@ -84,15 +84,6 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
       else setOpen(true);
     }}>
       <DialogContent className="rounded-3xl max-w-sm sm:max-w-md p-6 glass-card-solid border border-border/60 shadow-2xl overflow-hidden animate-scale-in">
-        {/* Close Button */}
-        <button
-          onClick={() => handleClose(true)}
-          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-secondary/80 hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
         {!showIOSGuide ? (
           <div className="space-y-5">
             {/* App Header Branding */}
