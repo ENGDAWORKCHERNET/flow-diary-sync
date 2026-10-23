@@ -2,7 +2,18 @@ import { useState, useEffect } from 'react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Share, PlusSquare, Zap, WifiOff, Bell, Smartphone, Check } from 'lucide-react';
+import {
+  Download,
+  Share,
+  PlusSquare,
+  Zap,
+  WifiOff,
+  Bell,
+  Smartphone,
+  Check,
+  MoreVertical,
+  MonitorSmartphone,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PWAInstallPromptProps {
@@ -10,89 +21,105 @@ interface PWAInstallPromptProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+type GuideMode = 'main' | 'ios' | 'android';
+
 export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstallPromptProps) {
-  const { isInstallable, isStandalone, isIOS, triggerInstall } = usePWAInstall();
+  const { isInstallable, isStandalone, isIOS, isAndroid, canPromptDirectly, triggerInstall } =
+    usePWAInstall();
   const [open, setOpen] = useState<boolean>(false);
-  const [showIOSGuide, setShowIOSGuide] = useState<boolean>(false);
+  const [guide, setGuide] = useState<GuideMode>('main');
   const [hasInstalled, setHasInstalled] = useState<boolean>(false);
 
-  // Auto-prompt on initial page load if not installed and not dismissed in session
+  // Auto-prompt on initial page load if not installed and not dismissed in this session
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    // Do nothing if already running as standalone PWA
     if (isStandalone) return;
 
-    // Check if dismissed in this session safely
     try {
       const dismissed = sessionStorage.getItem('studyflow_pwa_dismissed');
       if (dismissed === 'true') return;
     } catch {
-      // Storage access blocked or restricted in private browsing
+      // sessionStorage blocked (private browsing or restrictive policy)
     }
 
-    // Show popup after a small smooth delay (1.2 seconds)
     const timer = setTimeout(() => {
-      setOpen(true);
+      if (isInstallable) setOpen(true);
     }, 1200);
 
     return () => clearTimeout(timer);
-  }, [isStandalone]);
+    // Re-run only when installability resolves (hook fires async)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStandalone, isInstallable]);
 
-  // Handle manual trigger from parent/header button
+  // Handle manual trigger from a parent header button
   useEffect(() => {
-    if (forceOpen !== undefined) {
-      setOpen(forceOpen);
-      if (forceOpen && isIOS) {
-        setShowIOSGuide(true);
-      }
+    if (forceOpen === undefined) return;
+    setOpen(forceOpen);
+    if (forceOpen) {
+      // If already on Android without native prompt, jump straight to guide
+      if (isAndroid && !canPromptDirectly) setGuide('android');
+      else if (isIOS) setGuide('ios');
+      else setGuide('main');
     }
-  }, [forceOpen, isIOS]);
+  }, [forceOpen, isAndroid, isIOS, canPromptDirectly]);
 
   const handleClose = (userInitiated = true) => {
     setOpen(false);
+    setGuide('main');
     if (onOpenChange) onOpenChange(false);
-    if (userInitiated && typeof window !== 'undefined') {
+    if (userInitiated) {
       try {
         sessionStorage.setItem('studyflow_pwa_dismissed', 'true');
       } catch {
-        // Storage access blocked or restricted
+        // Storage access blocked
       }
     }
   };
 
   const handleDownloadClick = async () => {
     if (isIOS) {
-      setShowIOSGuide(true);
+      setGuide('ios');
       return;
     }
 
     const result = await triggerInstall();
-    if (result === 'accepted') {
-      setHasInstalled(true);
-      toast.success('StudyFlow installed to your device! 🎉');
-      setTimeout(() => {
-        handleClose(false);
-      }, 1500);
-    } else if (result === 'manual_ios') {
-      setShowIOSGuide(true);
-    } else if (result === 'dismissed') {
-      handleClose(true);
-    } else {
-      // Browser didn't support automated prompt (e.g. desktop firefox / unsupported)
-      toast.info("To install, tap your browser's menu (⋮) and select 'Install app' or 'Add to Home screen'.");
+
+    switch (result) {
+      case 'accepted':
+        setHasInstalled(true);
+        toast.success('StudyFlow installed to your device! 🎉');
+        setTimeout(() => handleClose(false), 1500);
+        break;
+      case 'dismissed':
+        handleClose(true);
+        break;
+      case 'manual_ios':
+        setGuide('ios');
+        break;
+      case 'manual_android':
+        setGuide('android');
+        break;
+      default:
+        // Unsupported browser (desktop Firefox, etc.)
+        toast.info(
+          "To install, open your browser's menu (⋮) and choose 'Install app' or 'Add to Home screen'.",
+        );
     }
   };
 
   if (isStandalone) return null;
 
   return (
-    <Dialog open={open} onOpenChange={isOpen => {
-      if (!isOpen) handleClose(true);
-      else setOpen(true);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) handleClose(true);
+        else setOpen(true);
+      }}
+    >
       <DialogContent className="rounded-3xl max-w-sm sm:max-w-md p-6 glass-card-solid border border-border/60 shadow-2xl overflow-hidden animate-scale-in">
-        {!showIOSGuide ? (
+        {/* ── Main install screen ── */}
+        {guide === 'main' && (
           <div className="space-y-5">
             {/* App Header Branding */}
             <div className="flex items-center gap-3.5 pt-1">
@@ -122,7 +149,8 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
 
             {/* Description */}
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Download StudyFlow directly to your phone for a full app experience with instant schedule access and offline support.
+              Add StudyFlow to your home screen for a full app experience with instant access and
+              offline support — no App Store required.
             </p>
 
             {/* Benefit Highlights */}
@@ -131,19 +159,25 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
                 <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
                   <Zap className="w-3.5 h-3.5" />
                 </div>
-                <span><strong>Instant Home Screen Access</strong> with custom icon & name</span>
+                <span>
+                  <strong>Instant Home Screen Access</strong> with custom icon &amp; name
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-xs text-foreground/90">
                 <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
                   <WifiOff className="w-3.5 h-3.5" />
                 </div>
-                <span><strong>Works Offline</strong> without browser tabs or reloading</span>
+                <span>
+                  <strong>Works Offline</strong> without browser tabs or reloading
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-xs text-foreground/90">
                 <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
                   <Bell className="w-3.5 h-3.5" />
                 </div>
-                <span><strong>Class Timetable & Tasks</strong> always 1 tap away</span>
+                <span>
+                  <strong>Schedule &amp; Tasks</strong> always 1 tap away
+                </span>
               </div>
             </div>
 
@@ -162,7 +196,15 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span>Download App to Device</span>
+                    <span>
+                      {canPromptDirectly
+                        ? 'Install App'
+                        : isAndroid
+                          ? 'How to Install on Android'
+                          : isIOS
+                            ? 'How to Add to Home Screen'
+                            : 'Download App to Device'}
+                    </span>
                   </>
                 )}
               </Button>
@@ -176,8 +218,10 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
               </Button>
             </div>
           </div>
-        ) : (
-          /* iOS Safari Specific Step-by-Step Guide */
+        )}
+
+        {/* ── iOS Safari step-by-step guide ── */}
+        {guide === 'ios' && (
           <div className="space-y-4 pt-1">
             <div className="flex items-center gap-3">
               <img
@@ -189,7 +233,7 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
                 <DialogTitle className="font-display text-lg font-bold">
                   Add to iPhone Home Screen
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground">Follow these 3 quick steps in Safari:</p>
+                <p className="text-xs text-muted-foreground">3 quick steps in Safari:</p>
               </div>
             </div>
 
@@ -199,7 +243,8 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
                   1
                 </span>
                 <p className="pt-0.5 text-muted-foreground">
-                  Tap the <strong className="text-foreground">Share button</strong>{' '}
+                  Tap the{' '}
+                  <strong className="text-foreground">Share button</strong>{' '}
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary text-primary font-semibold">
                     <Share className="w-3.5 h-3.5 inline mr-1" /> Share
                   </span>{' '}
@@ -226,7 +271,91 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
                   3
                 </span>
                 <p className="pt-0.5 text-muted-foreground">
-                  Tap <strong className="text-foreground">Add</strong> in the top right. StudyFlow will appear on your phone screen with its icon!
+                  Tap <strong className="text-foreground">Add</strong> in the top right. StudyFlow
+                  will appear on your home screen!
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => handleClose(true)}
+              className="w-full h-11 rounded-2xl font-semibold text-xs mt-2"
+            >
+              Got it!
+            </Button>
+          </div>
+        )}
+
+        {/* ── Android manual install guide ── */}
+        {guide === 'android' && (
+          <div className="space-y-4 pt-1">
+            <div className="flex items-center gap-3">
+              <img
+                src="/icon-192.png"
+                alt="StudyFlow"
+                className="w-12 h-12 rounded-xl border border-border/50 shadow-sm"
+              />
+              <div>
+                <DialogTitle className="font-display text-lg font-bold">
+                  Add to Android Home Screen
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground">Works in Chrome, Samsung Browser &amp; more:</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-secondary/40 rounded-2xl p-4 border border-border/40 text-xs">
+              {/* Step 1 */}
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center shrink-0 text-xs shadow-sm">
+                  1
+                </span>
+                <p className="pt-0.5 text-muted-foreground">
+                  Tap the{' '}
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-secondary text-primary font-semibold">
+                    <MoreVertical className="w-3 h-3" /> Menu
+                  </span>{' '}
+                  icon (three dots) in the top-right corner of your browser.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center shrink-0 text-xs shadow-sm">
+                  2
+                </span>
+                <p className="pt-0.5 text-muted-foreground">
+                  Tap{' '}
+                  <strong className="text-foreground">
+                    "Add to Home screen"
+                  </strong>{' '}
+                  or{' '}
+                  <strong className="text-foreground">"Install app"</strong>.
+                  <br />
+                  <span className="text-muted-foreground/70">
+                    (Samsung Internet: tap <em>Add page to</em> → <em>Home screen</em>)
+                  </span>
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center shrink-0 text-xs shadow-sm">
+                  3
+                </span>
+                <p className="pt-0.5 text-muted-foreground">
+                  Tap <strong className="text-foreground">Add</strong> or{' '}
+                  <strong className="text-foreground">Install</strong> in the confirmation dialog.
+                  StudyFlow will appear on your home screen!
+                </p>
+              </div>
+
+              {/* Tip for Chrome */}
+              <div className="flex items-start gap-2 mt-1 pt-2 border-t border-border/30">
+                <MonitorSmartphone className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                <p className="text-muted-foreground/70">
+                  <strong className="text-muted-foreground">Chrome tip:</strong> Look for an{' '}
+                  <strong className="text-foreground">Install</strong> button (⊕) in the address
+                  bar — tap it for the fastest installation.
                 </p>
               </div>
             </div>

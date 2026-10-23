@@ -9,52 +9,77 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+// Detect the broad Android family: Chrome, Samsung Internet, Firefox, Edge, Opera, WebView
+function detectAndroid(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent;
+  return /android/i.test(ua);
+}
+
+// Detect iOS (iPhone / iPad / iPod — including iPadOS masquerading as desktop Safari)
+function detectIOS(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent;
+  return (
+    /iphone|ipad|ipod/i.test(ua) ||
+    (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
+  );
+}
+
+// Detect whether the app is already running in standalone / installed mode
+function detectStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+}
+
+export type InstallResult = 'accepted' | 'dismissed' | 'manual_ios' | 'manual_android' | 'unavailable';
+
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
+  const [isAndroid, setIsAndroid] = useState<boolean>(false);
   const [isInstallable, setIsInstallable] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check if app is already running in standalone (installed) mode
-    const checkStandalone = () => {
-      const isStandaloneMode =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
-        document.referrer.includes('android-app://');
-      setIsStandalone(isStandaloneMode);
-      return isStandaloneMode;
-    };
+    const standalone = detectStandalone();
+    setIsStandalone(standalone);
 
-    const standalone = checkStandalone();
-
-    // Check if user is on iOS (iPhone/iPad/iPod)
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice =
-      /iphone|ipad|ipod/.test(userAgent) ||
-      (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
-    setIsIOS(isIOSDevice);
+    const ios = detectIOS();
+    const android = detectAndroid();
+    setIsIOS(ios);
+    setIsAndroid(android);
 
     if (standalone) {
+      // Already installed — nothing to show
       setIsInstallable(false);
       return;
     }
 
-    // On iOS, if not standalone, it is installable via Safari Share menu
-    if (isIOSDevice) {
+    // iOS cannot trigger beforeinstallprompt; guide user via Safari share sheet
+    if (ios) {
       setIsInstallable(true);
     }
 
-    // Capture standard PWA beforeinstallprompt on Chromium/Android/Desktop
+    // Android without beforeinstallprompt (Samsung Internet, Firefox, old Chrome)
+    // will get a manual guide — mark installable so the prompt is shown
+    if (android && !ios) {
+      setIsInstallable(true);
+    }
+
+    // Capture the standard Chromium / Android Chrome install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
-    // Listen for successful install
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       setIsInstallable(false);
@@ -70,39 +95,37 @@ export function usePWAInstall() {
     };
   }, []);
 
-  const triggerInstall = useCallback(async (): Promise<'accepted' | 'dismissed' | 'manual_ios' | 'unavailable'> => {
-    if (isStandalone) {
-      return 'unavailable';
-    }
+  const triggerInstall = useCallback(async (): Promise<InstallResult> => {
+    if (isStandalone) return 'unavailable';
 
+    // Native prompt available (Android Chrome, desktop Chromium)
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        if (choice.outcome === 'accepted') {
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
           setDeferredPrompt(null);
           setIsInstallable(false);
           return 'accepted';
-        } else {
-          return 'dismissed';
         }
+        return 'dismissed';
       } catch (err) {
         console.error('PWA install prompt error:', err);
-        return 'unavailable';
+        // Fall through to manual guide
       }
     }
 
-    if (isIOS) {
-      return 'manual_ios';
-    }
+    if (isIOS) return 'manual_ios';
+    if (isAndroid) return 'manual_android';
 
     return 'unavailable';
-  }, [deferredPrompt, isIOS, isStandalone]);
+  }, [deferredPrompt, isIOS, isAndroid, isStandalone]);
 
   return {
     isInstallable,
     isStandalone,
     isIOS,
+    isAndroid,
     canPromptDirectly: Boolean(deferredPrompt),
     triggerInstall,
   };

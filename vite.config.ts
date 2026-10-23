@@ -18,7 +18,44 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
+      includeAssets: [
+        "favicon.ico",
+        "favicon.png",
+        "apple-touch-icon.png",
+        "icon-192.png",
+        "icon-512.png",
+        "screenshot-wide.png",
+        "screenshot-narrow.png",
+      ],
+      // Tell the browser the SW controls all navigations
+      injectRegister: "auto",
+      workbox: {
+        // Precache the app shell
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest}"],
+        // Never cache GA collection requests
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/sw\.js/],
+        runtimeCaching: [
+          {
+            // Cache images with a cache-first strategy
+            urlPattern: /\.(?:png|ico|svg|jpg|jpeg|webp|gif)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images",
+              expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
+            },
+          },
+          {
+            // Network-first for navigation (fresh HTML always tried first)
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages",
+              networkTimeoutSeconds: 5,
+            },
+          },
+        ],
+      },
       manifest: {
         id: "/",
         name: "StudyFlow",
@@ -27,9 +64,12 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#0f172a",
         background_color: "#020617",
         display: "standalone",
+        display_override: ["standalone", "minimal-ui", "browser"],
         orientation: "portrait",
         start_url: "/",
         scope: "/",
+        lang: "en",
+        categories: ["education", "productivity"],
         icons: [
           {
             src: "/icon-192.png",
@@ -54,6 +94,24 @@ export default defineConfig(({ mode }) => ({
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
+          },
+        ],
+        screenshots: [
+          {
+            src: "/screenshot-wide.png",
+            sizes: "1280x720",
+            type: "image/png",
+            // @ts-ignore – form_factor is valid in the spec but not yet in the type def
+            form_factor: "wide",
+            label: "StudyFlow Dashboard",
+          },
+          {
+            src: "/screenshot-narrow.png",
+            sizes: "720x1280",
+            type: "image/png",
+            // @ts-ignore
+            form_factor: "narrow",
+            label: "StudyFlow on Mobile",
           },
         ],
       },
