@@ -23,9 +23,13 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
     // Do nothing if already running as standalone PWA
     if (isStandalone) return;
 
-    // Check if dismissed in this session
-    const dismissed = sessionStorage.getItem('studyflow_pwa_dismissed');
-    if (dismissed === 'true') return;
+    // Check if dismissed in this session safely
+    try {
+      const dismissed = sessionStorage.getItem('studyflow_pwa_dismissed');
+      if (dismissed === 'true') return;
+    } catch {
+      // Storage access blocked or restricted in private browsing
+    }
 
     // Show popup after a small smooth delay (1.2 seconds)
     const timer = setTimeout(() => {
@@ -49,7 +53,11 @@ export default function PWAInstallPrompt({ forceOpen, onOpenChange }: PWAInstall
     setOpen(false);
     if (onOpenChange) onOpenChange(false);
     if (userInitiated && typeof window !== 'undefined') {
-      sessionStorage.setItem('studyflow_pwa_dismissed', 'true');
+      try {
+        sessionStorage.setItem('studyflow_pwa_dismissed', 'true');
+      } catch {
+        // Storage access blocked or restricted
+      }
     }
   };
 

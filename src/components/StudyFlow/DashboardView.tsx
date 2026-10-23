@@ -5,7 +5,7 @@ import {
 } from '@/lib/data';
 import { useSchedule } from '@/context/ScheduleContext';
 import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2, Bell, BellOff } from 'lucide-react';
-import { requestPermission, sendLocalNotification } from '@/lib/notifications';
+import { requestPermission, sendLocalNotification, isNotificationSupported } from '@/lib/notifications';
 import { toast } from 'sonner';
 
 export default function DashboardView({ 
@@ -18,9 +18,9 @@ export default function DashboardView({
   const { getTodayClasses, getNextClass, getCurrentClass, schedule } = useSchedule();
   const [now, setNow] = useState(new Date());
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
-    typeof window !== 'undefined' ? Notification.permission === 'granted' : false
-  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    return isNotificationSupported() && Notification.permission === 'granted';
+  });
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
@@ -28,6 +28,10 @@ export default function DashboardView({
   }, []);
 
   const handleEnableNotifications = async () => {
+    if (!isNotificationSupported()) {
+      toast.info("Notifications are not supported in this mobile browser. Add StudyFlow to your Home Screen to enable alerts!");
+      return;
+    }
     const granted = await requestPermission();
     if (granted) {
       setNotificationsEnabled(true);
