@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   SUBJECTS,
-  SUBJECT_COLOR,
+  getSubjectColor,
   DAY_NAMES,
   DAY_SHORT,
   PERIOD_PRESETS,
@@ -32,19 +32,25 @@ export default function ClassFormModal({
   onOpenChange,
   editingSession,
 }: ClassFormModalProps) {
-  const { addClass, updateClass, deleteClass } = useSchedule();
+  const { addClass, updateClass, deleteClass, schedule } = useSchedule();
 
   const [day, setDay] = useState<number>(1); // Default to Monday
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('Period 4');
-  const [startTime, setStartTime] = useState<string>('14:00');
-  const [endTime, setEndTime] = useState<string>('15:30');
-  const [subject, setSubject] = useState<string>(SUBJECTS[0]);
-  const [customSubject, setCustomSubject] = useState<string>('');
-  const [isCustomSubject, setIsCustomSubject] = useState<boolean>(false);
-  const [room, setRoom] = useState<string>('LR 301');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('Period 1');
+  const [startTime, setStartTime] = useState<string>('08:00');
+  const [endTime, setEndTime] = useState<string>('09:30');
+  const [subject, setSubject] = useState<string>('');
+  const [room, setRoom] = useState<string>('');
   const [isLab, setIsLab] = useState<boolean>(false);
   const [labGroup, setLabGroup] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Available subject suggestions: subjects in schedule first, then default subjects
+  const knownSubjects = Array.from(
+    new Set([
+      ...schedule.map(s => s.subject).filter(Boolean),
+      ...SUBJECTS,
+    ])
+  );
 
   // Sync form when opening or editingSession changes
   useEffect(() => {
@@ -52,35 +58,23 @@ export default function ClassFormModal({
       setDay(editingSession.day);
       setStartTime(editingSession.startTime);
       setEndTime(editingSession.endTime);
+      setSubject(editingSession.subject || '');
       setRoom(editingSession.room || '');
       setIsLab(Boolean(editingSession.isLab));
       setLabGroup(editingSession.labGroup || '');
 
-      const isPresetSubject = (SUBJECTS as readonly string[]).includes(editingSession.subject);
-      if (isPresetSubject) {
-        setSubject(editingSession.subject);
-        setIsCustomSubject(false);
-        setCustomSubject('');
-      } else {
-        setIsCustomSubject(true);
-        setCustomSubject(editingSession.subject);
-      }
-
-      // Check if matches preset period
       const matchedPreset = PERIOD_PRESETS.find(
         p => p.startTime === editingSession.startTime && p.endTime === editingSession.endTime
       );
       setSelectedPeriod(matchedPreset ? matchedPreset.name : 'Custom');
     } else {
-      // Reset for new class
+      // Reset for new blank class
       setDay(1);
-      setSelectedPeriod('Period 4');
-      setStartTime('14:00');
-      setEndTime('15:30');
-      setSubject(SUBJECTS[0]);
-      setIsCustomSubject(false);
-      setCustomSubject('');
-      setRoom('LR 301');
+      setSelectedPeriod('Period 1');
+      setStartTime('08:00');
+      setEndTime('09:30');
+      setSubject('');
+      setRoom('');
       setIsLab(false);
       setLabGroup('');
       setIsDeleting(false);
@@ -103,7 +97,6 @@ export default function ClassFormModal({
       setEndTime(value);
     }
 
-    // Check if new times match any preset
     const newStart = type === 'start' ? value : startTime;
     const newEnd = type === 'end' ? value : endTime;
     const matched = PERIOD_PRESETS.find(p => p.startTime === newStart && p.endTime === newEnd);
@@ -113,7 +106,7 @@ export default function ClassFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const finalSubject = (isCustomSubject ? customSubject.trim() : subject) || 'Untitled Class';
+    const finalSubject = subject.trim();
     if (!finalSubject) {
       toast.error('Please enter a class subject');
       return;
@@ -129,7 +122,7 @@ export default function ClassFormModal({
       return;
     }
 
-    const colorClass = SUBJECT_COLOR[finalSubject] || 'subject-web';
+    const colorClass = getSubjectColor(finalSubject);
 
     const payload: Omit<ClassSession, 'id'> = {
       subject: finalSubject,
@@ -155,7 +148,7 @@ export default function ClassFormModal({
         toast.error(res.error || 'Failed to add class');
         return;
       }
-      toast.success('Class added successfully');
+      toast.success('Class added to your schedule');
     }
 
     onOpenChange(false);
@@ -272,54 +265,33 @@ export default function ClassFormModal({
             </div>
           </div>
 
-          {/* Subject Selection */}
+          {/* Subject Input & Suggestions */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Subject
+              Subject Name
             </Label>
-            {!isCustomSubject ? (
-              <div className="space-y-2">
-                <select
-                  value={subject}
-                  onChange={e => {
-                    if (e.target.value === '__custom__') {
-                      setIsCustomSubject(true);
-                    } else {
-                      setSubject(e.target.value);
-                    }
-                  }}
-                  className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  {SUBJECTS.map(s => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                  <option value="__custom__">+ Enter Custom Subject...</option>
-                </select>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g. SE2205 (Computer Organization & Architecture)"
-                    value={customSubject}
-                    onChange={e => setCustomSubject(e.target.value)}
-                    className="rounded-xl text-sm"
-                    required
-                  />
-                  <Button
+            <Input
+              placeholder="e.g. Mathematics, Biology 101, Web Development..."
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
+              className="rounded-xl text-sm"
+              required
+            />
+            {knownSubjects.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] text-muted-foreground self-center">Suggestions:</span>
+                {knownSubjects.slice(0, 5).map(s => (
+                  <button
+                    key={s}
                     type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsCustomSubject(false);
-                      setSubject(SUBJECTS[0]);
-                    }}
-                    className="rounded-xl text-xs"
+                    onClick={() => setSubject(s)}
+                    className={`text-[11px] px-2 py-0.5 rounded-lg border border-border/50 transition-colors ${
+                      subject === s ? 'bg-primary/15 text-primary border-primary/40 font-semibold' : 'bg-secondary/50 hover:bg-secondary text-muted-foreground'
+                    }`}
                   >
-                    Preset
-                  </Button>
-                </div>
+                    {s}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -327,10 +299,10 @@ export default function ClassFormModal({
           {/* Room */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Room / Location
+              Room / Location (Optional)
             </Label>
             <Input
-              placeholder="e.g. LR 301, LR 202, Lab 501"
+              placeholder="e.g. Room 101, Hall B, Science Lab, Online..."
               value={room}
               onChange={e => setRoom(e.target.value)}
               className="rounded-xl text-sm"

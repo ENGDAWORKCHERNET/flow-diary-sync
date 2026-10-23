@@ -41,13 +41,34 @@ export default function ScheduleView() {
         </Button>
       </div>
 
-      {DAYS_WITH_CLASSES.map(day => {
-        const classes = schedule
-          .filter(s => s.day === day)
-          .sort((a, b) => a.startTime.localeCompare(b.startTime));
-        const isToday = day === today;
+      {schedule.length === 0 ? (
+        <div className="glass-card p-8 text-center space-y-4 animate-fade-in my-2">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+            <Plus className="w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-lg">No Classes Scheduled Yet</h3>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed">
+              Your timetable is completely blank and ready for your schedule. Tap below to add your first lecture or lab session.
+            </p>
+          </div>
+          <Button
+            onClick={handleOpenAdd}
+            size="sm"
+            className="rounded-xl gap-1.5 shadow-md font-semibold px-4 py-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Your First Class</span>
+          </Button>
+        </div>
+      ) : (
+        DAYS_WITH_CLASSES.map(day => {
+          const classes = schedule
+            .filter(s => s.day === day)
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+          const isToday = day === today;
 
-        if (classes.length === 0) return null;
+          if (classes.length === 0) return null;
 
         return (
           <div key={day} className={`glass-card p-4 ${isToday ? 'ring-2 ring-primary/40' : ''}`}>
@@ -94,7 +115,8 @@ export default function ScheduleView() {
             </div>
           </div>
         );
-      })}
+      })
+    )}
 
       <ClassFormModal
         open={formOpen}

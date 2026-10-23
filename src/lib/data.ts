@@ -30,33 +30,32 @@ export interface Task {
 }
 
 export const SUBJECTS = [
-  'SE2205 (Computer Organization & Architecture)',
-  'CC0195 (Entrepreneurship)',
-  'SE2311 (Software Requirements Engineering)',
-  'SE2223 (Web Design & Development II)',
-  'SE2231 (Data Structures & Algorithm Analysis)',
+  'General',
+  'Mathematics',
+  'Computer Science',
+  'Science',
+  'Literature',
 ] as const;
 
 export const SUBJECT_COLOR: Record<string, string> = {
-  'SE2205 (Computer Organization & Architecture)': 'subject-math',
-  'CC0195 (Entrepreneurship)': 'subject-stats',
-  'SE2311 (Software Requirements Engineering)': 'subject-web',
-  'SE2223 (Web Design & Development II)': 'subject-web',
-  'SE2231 (Data Structures & Algorithm Analysis)': 'subject-math',
+  'General': 'subject-web',
+  'Mathematics': 'subject-math',
+  'Computer Science': 'subject-web',
+  'Science': 'subject-stats',
+  'Literature': 'subject-math',
 };
 
-export const SCHEDULE: ClassSession[] = [
-  { id: '1', subject: 'SE2205 (Computer Organization & Architecture)', day: 1, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math', room: 'LR 301' },
-  { id: '2', subject: 'CC0195 (Entrepreneurship)', day: 1, startTime: '15:30', endTime: '17:00', colorClass: 'subject-stats', room: 'LR 301' },
-  { id: '3', subject: 'SE2311 (Software Requirements Engineering)', day: 2, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR 202' },
-  { id: '4', subject: 'SE2223 (Web Design & Development II)', day: 2, startTime: '15:30', endTime: '17:00', colorClass: 'subject-web', room: 'LR 202' },
-  { id: '5', subject: 'SE2231 (Data Structures & Algorithm Analysis)', day: 4, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math', room: 'LR 202' },
-  { id: '6', subject: 'CC0195 (Entrepreneurship)', day: 4, startTime: '15:30', endTime: '17:00', colorClass: 'subject-stats', room: 'LR 201' },
-  { id: '7', subject: 'SE2311 (Software Requirements Engineering)', day: 5, startTime: '14:00', endTime: '15:30', colorClass: 'subject-web', room: 'LR 401' },
-  { id: '8', subject: 'SE2231 (Data Structures & Algorithm Analysis)', day: 5, startTime: '15:30', endTime: '17:00', colorClass: 'subject-math', room: 'LR 401' },
-  { id: '9', subject: 'SE2205 (Computer Organization & Architecture)', day: 6, startTime: '08:00', endTime: '09:30', colorClass: 'subject-math', room: 'LR 401' },
-  { id: '10', subject: 'SE2223 (Web Design & Development II)', day: 6, startTime: '11:30', endTime: '13:00', colorClass: 'subject-web', room: 'LR 201' },
-];
+export function getSubjectColor(subject: string): string {
+  if (SUBJECT_COLOR[subject]) return SUBJECT_COLOR[subject];
+  const colors = ['subject-math', 'subject-web', 'subject-stats'];
+  let hash = 0;
+  for (let i = 0; i < (subject || '').length; i++) {
+    hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+export const SCHEDULE: ClassSession[] = [];
 
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -104,10 +103,18 @@ export function loadSchedule(): ClassSession[] {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(SCHEDULE_KEY) : null;
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        // Clear out old hardcoded sample timetable if present so users start fresh
+        const hasLegacy = parsed.some((s: ClassSession) => s.id === '1' && typeof s.subject === 'string' && s.subject.includes('SE2205'));
+        if (hasLegacy) {
+          localStorage.removeItem(SCHEDULE_KEY);
+          return [];
+        }
+        return parsed;
+      }
     }
   } catch {}
-  return SCHEDULE;
+  return [];
 }
 
 export function saveSchedule(schedule: ClassSession[]): void {
@@ -209,60 +216,33 @@ export function getCurrentClass(schedule?: ClassSession[], customNow?: Date): Cl
 
 const TASKS_KEY = 'studyflow_tasks';
 
-const DEFAULT_TASKS: Task[] = [
-  {
-    id: '1',
-    title: 'Discrete Math Problem Set 5',
-    description: 'Complete exercises 3.1–3.15 on graph theory',
-    dueDate: new Date(Date.now() + 2 * 86400000).toISOString(),
-    priority: 'high',
-    subject: 'Discrete Mathematics',
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Build Portfolio Website',
-    description: 'HTML/CSS responsive layout with 3 pages',
-    dueDate: new Date(Date.now() + 5 * 86400000).toISOString(),
-    priority: 'medium',
-    subject: 'Web Design & Development I',
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Statistics Quiz Prep',
-    description: 'Review chapters 4–6 on probability distributions',
-    dueDate: new Date(Date.now() + 1 * 86400000).toISOString(),
-    priority: 'high',
-    subject: 'Statistics & Probability',
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Read Chapter 4 — Relations',
-    description: 'Discrete math textbook chapter on relations and functions',
-    dueDate: new Date(Date.now() - 1 * 86400000).toISOString(),
-    priority: 'low',
-    subject: 'Discrete Mathematics',
-    completed: true,
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-];
+export const DEFAULT_TASKS: Task[] = [];
 
 export function loadTasks(): Task[] {
   try {
-    const raw = localStorage.getItem(TASKS_KEY);
-    if (raw) return JSON.parse(raw);
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(TASKS_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Clear out legacy template tasks if present so new users start blank
+        const hasLegacy = parsed.some((t: Task) => t.title === 'Discrete Math Problem Set 5' || t.title === 'Build Portfolio Website');
+        if (hasLegacy) {
+          localStorage.removeItem(TASKS_KEY);
+          return [];
+        }
+        return parsed;
+      }
+    }
   } catch {}
-  saveTasks(DEFAULT_TASKS);
-  return DEFAULT_TASKS;
+  return [];
 }
 
 export function saveTasks(tasks: Task[]): void {
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    }
+  } catch {}
 }
 
 export function getDailyQuote(): string {

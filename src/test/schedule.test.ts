@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   loadSchedule,
   saveSchedule,
+  loadTasks,
+  saveTasks,
   checkScheduleOverlap,
   getTodayClasses,
   getNextClass,
@@ -16,9 +18,22 @@ describe('Schedule Management & Persistence', () => {
     localStorage.clear();
   });
 
-  it('falls back to default SCHEDULE when localStorage is empty', () => {
+  it('defaults to an empty schedule on clean installation', () => {
     const loaded = loadSchedule();
-    expect(loaded).toEqual(SCHEDULE);
+    expect(loaded).toEqual([]);
+    expect(loaded).toHaveLength(0);
+  });
+
+  it('clears legacy hardcoded demo timetable if present in localStorage', () => {
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([
+        { id: '1', subject: 'SE2205 (Computer Organization & Architecture)', day: 1, startTime: '14:00', endTime: '15:30', colorClass: 'subject-math' }
+      ])
+    );
+    const loaded = loadSchedule();
+    expect(loaded).toEqual([]);
+    expect(localStorage.getItem(SCHEDULE_KEY)).toBeNull();
   });
 
   it('persists and loads custom schedule from localStorage', () => {
@@ -150,5 +165,19 @@ describe('Schedule Management & Persistence', () => {
     const current = getCurrentClass(schedule, duringClass);
     expect(current).not.toBeNull();
     expect(current?.subject).toBe('Morning Class');
+  });
+
+  it('defaults to an empty task list and cleans legacy demo tasks', () => {
+    expect(loadTasks()).toEqual([]);
+
+    // Save legacy task
+    saveTasks([{ id: '1', title: 'Discrete Math Problem Set 5', priority: 'high', subject: 'Math', completed: false, createdAt: new Date().toISOString() }]);
+    expect(loadTasks()).toEqual([]);
+
+    // Save custom user task
+    saveTasks([{ id: 'custom-1', title: 'My Personal Assignment', priority: 'medium', subject: 'Physics', completed: false, createdAt: new Date().toISOString() }]);
+    const loaded = loadTasks();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].title).toBe('My Personal Assignment');
   });
 });

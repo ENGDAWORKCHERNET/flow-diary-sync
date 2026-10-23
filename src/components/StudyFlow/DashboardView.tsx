@@ -17,7 +17,7 @@ export default function DashboardView({
   onToggleTask: (id: string) => void;
   aiGreeting?: string;
 }) {
-  const { getTodayClasses, getNextClass, getCurrentClass } = useSchedule();
+  const { getTodayClasses, getNextClass, getCurrentClass, schedule } = useSchedule();
   const [now, setNow] = useState(new Date());
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -67,7 +67,7 @@ export default function DashboardView({
         <div className="flex items-end justify-between mt-1">
           <div>
             <h1 className="text-xl font-bold font-display leading-tight">
-              {aiGreeting || `${getGreeting()}, Miki`} {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
+              {aiGreeting || `${getGreeting()}!`} {now.getHours() >= 17 || now.getHours() < 5 ? '🌙' : '👋'}
             </h1>
             {!aiGreeting && <p className="text-sm text-muted-foreground mt-1">Let's make today productive</p>}
           </div>
@@ -146,7 +146,11 @@ export default function DashboardView({
       <div className="glass-card p-4 animate-slide-up stagger-2">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Today's Classes</h3>
         {todayClasses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No classes today 🎉</p>
+          <p className="text-sm text-muted-foreground">
+            {schedule.length === 0
+              ? 'No classes scheduled yet. Tap Schedule to add your classes.'
+              : 'No classes today 🎉'}
+          </p>
         ) : (
           <div className="space-y-2">
             {todayClasses.map(c => (
@@ -194,7 +198,11 @@ export default function DashboardView({
           Today's Focus {overdueTasks.length > 0 && <span className="text-destructive ml-1">({overdueTasks.length} overdue)</span>}
         </h3>
         {todayTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">All caught up! 🎯</p>
+          <p className="text-sm text-muted-foreground">
+            {tasks.length === 0
+              ? 'No tasks yet. Tap the + button to add your first task.'
+              : 'All caught up! 🎯'}
+          </p>
         ) : (
           <div className="space-y-2">
             {todayTasks.slice(0, 4).map(t => (

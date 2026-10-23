@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { type Task, SUBJECTS, SUBJECT_COLOR, isOverdue } from '@/lib/data';
+import { type Task, SUBJECTS, getSubjectColor, isOverdue } from '@/lib/data';
+import { useSchedule } from '@/context/ScheduleContext';
 import { CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import TaskDetailView from './TaskDetailView';
 
 type Filter = 'all' | 'active' | 'overdue' | 'completed';
-type SubjectName = (typeof SUBJECTS)[number];
 
 interface Props {
   tasks: Task[];
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask, onSaveSession }: Props) {
+  const { schedule } = useSchedule();
   const [filter, setFilter] = useState<Filter>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -26,7 +27,11 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [subject, setSubject] = useState<string>(SUBJECTS[0]);
+  const [subject, setSubject] = useState<string>('General');
+
+  const availableSubjects = Array.from(
+    new Set([...schedule.map(s => s.subject).filter(Boolean), ...SUBJECTS])
+  );
 
   const filtered = tasks.filter(t => {
     if (filter === 'active') return !t.completed;
@@ -90,19 +95,29 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {SUBJECTS.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSubject(s)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                      subject === s ? `${SUBJECT_COLOR[s]} ring-1 ring-current/20` : 'bg-secondary text-secondary-foreground'
-                    }`}
-                  >
-                    {s.split(' ')[0]}
-                  </button>
-                ))}
+              <div className="space-y-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  {availableSubjects.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSubject(s)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-medium transition-colors ${
+                        subject === s
+                          ? `${getSubjectColor(s)} ring-1 ring-current/20 font-semibold shadow-sm`
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                      }`}
+                    >
+                      {s.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  placeholder="Or custom subject (e.g. Chemistry)"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  className="rounded-xl text-xs h-8"
+                />
               </div>
               <Button type="submit" className="w-full rounded-xl">Create Task</Button>
             </form>
@@ -135,8 +150,26 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
       {/* Task List */}
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="glass-card p-8 text-center text-muted-foreground text-sm">
-            No tasks found
+          <div className="glass-card p-8 text-center space-y-3 animate-fade-in my-2">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <Plus className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-display font-semibold text-base">
+                {tasks.length === 0 ? 'No Tasks Yet' : 'No Tasks Found'}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
+                {tasks.length === 0
+                  ? 'Your task list is clean and blank. Tap below to add your homework or assignments.'
+                  : 'No tasks match the active filter.'}
+              </p>
+            </div>
+            {tasks.length === 0 && (
+              <Button onClick={() => setDialogOpen(true)} size="sm" className="rounded-xl gap-1.5 shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>Create Your First Task</span>
+              </Button>
+            )}
           </div>
         )}
         {filtered.map(t => (
@@ -152,7 +185,7 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
               <p className={`text-sm font-medium ${t.completed ? 'line-through text-muted-foreground' : ''}`}>{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{t.description}</p>}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className={`${SUBJECT_COLOR[t.subject] || ''} text-[10px] font-medium px-2 py-0.5 rounded-full`}>
+                <span className={`${getSubjectColor(t.subject)} text-[10px] font-medium px-2 py-0.5 rounded-full`}>
                   {t.subject.split(' ')[0]}
                 </span>
                 <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${

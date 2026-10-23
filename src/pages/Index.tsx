@@ -13,11 +13,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { SUBJECTS, SUBJECT_COLOR } from '@/lib/data';
+import { SUBJECTS, getSubjectColor } from '@/lib/data';
+import { useSchedule } from '@/context/ScheduleContext';
 
 type Tab = 'dashboard' | 'schedule' | 'tasks';
 
 export default function Index() {
+  const { schedule } = useSchedule();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [tasks, setTasks] = useState<Task[]>(() => loadTasks());
   const { theme, setTheme } = useTheme();
@@ -25,12 +27,16 @@ export default function Index() {
   const [fabOpen, setFabOpen] = useState(false);
   const [installPromptOpen, setInstallPromptOpen] = useState(false);
 
+  const availableSubjects = Array.from(
+    new Set([...schedule.map(s => s.subject).filter(Boolean), ...SUBJECTS])
+  );
+
   // Quick add form state
   const [qTitle, setQTitle] = useState('');
   const [qDesc, setQDesc] = useState('');
   const [qDue, setQDue] = useState('');
   const [qPriority, setQPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [qSubject, setQSubject] = useState<string>(SUBJECTS[0]);
+  const [qSubject, setQSubject] = useState<string>('General');
   const [aiGreeting, setAiGreeting] = useState<string>('');
 
   useEffect(() => {
@@ -187,19 +193,29 @@ export default function Index() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 flex-wrap">
-              {SUBJECTS.map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setQSubject(s)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                    qSubject === s ? `${SUBJECT_COLOR[s]} ring-1 ring-current/20` : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  {s.split(' ')[0]}
-                </button>
-              ))}
+            <div className="space-y-1.5">
+              <div className="flex gap-1.5 flex-wrap">
+                {availableSubjects.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setQSubject(s)}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-medium transition-colors ${
+                      qSubject === s
+                        ? `${getSubjectColor(s)} ring-1 ring-current/20 font-semibold shadow-sm`
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    {s.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+              <Input
+                placeholder="Or custom subject (e.g. Physics)"
+                value={qSubject}
+                onChange={e => setQSubject(e.target.value)}
+                className="rounded-xl text-xs h-8"
+              />
             </div>
             <Button type="submit" className="w-full rounded-xl">Add Task</Button>
           </form>
