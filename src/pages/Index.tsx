@@ -4,6 +4,7 @@ import { loadTasks, saveTasks, type Task } from '@/lib/data';
 import DashboardView from '@/components/StudyFlow/DashboardView';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { usePageViewTracking } from '@/hooks/usePageViewTracking';
 import { Home, CalendarDays, ListChecks, Sun, Moon, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
