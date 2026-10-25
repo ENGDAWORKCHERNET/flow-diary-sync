@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import React, { useState } from 'react';
+import React, { StrictMode, useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import {
   initAnalytics,
@@ -30,8 +30,8 @@ describe('Google Analytics 4 Module (analytics.ts)', () => {
     vi.restoreAllMocks();
   });
 
-  it('Measurement ID matches G-MF5C3GZFY9', () => {
-    expect(GA_MEASUREMENT_ID).toBe('G-MF5C3GZFY9');
+  it('Measurement ID matches G-4DS4SCWLF7', () => {
+    expect(GA_MEASUREMENT_ID).toBe('G-4DS4SCWLF7');
   });
 
   it('does not initialize in non-production environments by default (no-op)', () => {
@@ -166,6 +166,25 @@ describe('usePageViewTracking Hook', () => {
     const pv = pageViews[0] as [string, string, { page_path: string; page_title: string }];
     expect(pv[2].page_path).toBe(TAB_PATHS.dashboard);
     expect(pv[2].page_title).toBe(TAB_TITLES.dashboard);
+  });
+
+  it('does not duplicate the initial page view in React Strict Mode', () => {
+    render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/']}>
+          <TestTabComponent tab="dashboard" />
+        </MemoryRouter>
+      </StrictMode>
+    );
+
+    const pageViews = window.dataLayer.filter(
+      (entry) =>
+        Array.isArray(entry) &&
+        entry[0] === 'event' &&
+        entry[1] === 'page_view'
+    );
+
+    expect(pageViews).toHaveLength(1);
   });
 
   it('does not fire duplicate page views on re-renders or when re-selecting the active tab', () => {

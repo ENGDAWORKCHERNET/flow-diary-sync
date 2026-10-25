@@ -46,9 +46,7 @@ declare global {
 // Constants
 // ---------------------------------------------------------------------------
 
-export const GA_MEASUREMENT_ID: string =
-  (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) ??
-  'G-MF5C3GZFY9';
+export const GA_MEASUREMENT_ID = 'G-4DS4SCWLF7';
 
 const DEBUG_LOGGING: boolean = import.meta.env.VITE_GA_DEBUG === '1';
 
