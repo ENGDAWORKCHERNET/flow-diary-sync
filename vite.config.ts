@@ -1,11 +1,16 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import groqScheduleHandler from "./api/groq-schedule";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  process.env.GROQ_API_KEY ??= env.GROQ_API_KEY;
+
+  return ({
   server: {
     host: "::",
     port: 8080,
@@ -16,6 +21,51 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    mode === "development" && {
+      name: "local-groq-schedule-proxy",
+      configureServer(server) {
+        server.middlewares.use("/api/groq-schedule", async (req, res, next) => {
+          if (req.method !== "POST") {
+            const proxyResponse = createProxyResponse(res);
+            await groqScheduleHandler({ method: req.method } as never, proxyResponse as never);
+            return;
+          }
+
+          try {
+            const chunks: Buffer[] = [];
+            let size = 0;
+            for await (const chunk of req) {
+              const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+              size += buffer.length;
+              if (size > 4_200_000) {
+                res.statusCode = 413;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ error: "Schedule image is too large" }));
+                return;
+              }
+              chunks.push(buffer);
+            }
+
+            let body: unknown;
+            try {
+              body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            } catch {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "Invalid request body" }));
+              return;
+            }
+
+            await groqScheduleHandler(
+              { method: req.method, body } as never,
+              createProxyResponse(res) as never,
+            );
+          } catch (error) {
+            next(error);
+          }
+        });
+      },
+    },
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
@@ -144,5 +194,19 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+  });
+});
 
+function createProxyResponse(res: import("node:http").ServerResponse) {
+  return {
+    status(code: number) {
+      res.statusCode = code;
+      return this;
+    },
+    json(body: unknown) {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(body));
+      return this;
+    },
+  };
+}
