@@ -249,7 +249,7 @@ export default function ClassFormModal({
                 type="time"
                 value={startTime}
                 onChange={e => handleCustomTimeChange('start', e.target.value)}
-                className="rounded-xl font-mono text-sm"
+                className="rounded-xl font-mono"
                 required
               />
             </div>
@@ -259,7 +259,7 @@ export default function ClassFormModal({
                 type="time"
                 value={endTime}
                 onChange={e => handleCustomTimeChange('end', e.target.value)}
-                className="rounded-xl font-mono text-sm"
+                className="rounded-xl font-mono"
                 required
               />
             </div>
@@ -274,7 +274,7 @@ export default function ClassFormModal({
               placeholder="e.g. Mathematics, Biology 101, Web Development..."
               value={subject}
               onChange={e => setSubject(e.target.value)}
-              className="rounded-xl text-sm"
+              className="rounded-xl"
               required
             />
             {knownSubjects.length > 0 && (
@@ -305,7 +305,7 @@ export default function ClassFormModal({
               placeholder="e.g. Room 101, Hall B, Science Lab, Online..."
               value={room}
               onChange={e => setRoom(e.target.value)}
-              className="rounded-xl text-sm"
+              className="rounded-xl"
             />
           </div>
 
@@ -329,7 +329,7 @@ export default function ClassFormModal({
                   placeholder="Lab Group (e.g. Grp 1, Grp 2)"
                   value={labGroup}
                   onChange={e => setLabGroup(e.target.value)}
-                  className="rounded-xl text-sm"
+                  className="rounded-xl"
                 />
               </div>
             )}

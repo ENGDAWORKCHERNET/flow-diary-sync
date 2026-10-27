@@ -116,7 +116,7 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
                   placeholder="Or custom subject (e.g. Chemistry)"
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
-                  className="rounded-xl text-xs h-8"
+                  className="rounded-xl h-10"
                 />
               </div>
               <Button type="submit" className="w-full rounded-xl">Create Task</Button>

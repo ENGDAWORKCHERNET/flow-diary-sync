@@ -178,7 +178,7 @@ export default function Index() {
                 placeholder="Or custom subject (e.g. Physics)"
                 value={qSubject}
                 onChange={e => setQSubject(e.target.value)}
-                className="rounded-xl text-xs h-8"
+                className="rounded-xl h-10"
               />
             </div>
             <Button type="submit" className="w-full rounded-xl">Add Task</Button>
