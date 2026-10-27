@@ -83,8 +83,10 @@ export function initAnalytics(options?: InitAnalyticsOptions): void {
 
   // Provide the gtag function if the script hasn't injected it yet.
   if (typeof window.gtag !== 'function') {
-    window.gtag = function (...args: [GtagCommand, string | Date, (GtagConfigParams | GtagEventParams)?]) {
-      window.dataLayer.push(args);
+    window.gtag = function () {
+      // gtag.js consumes the official arguments-object queue format.
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments);
     };
   }
 

@@ -17,6 +17,16 @@ import {
 } from '@/hooks/usePageViewTracking';
 import NotFound from '@/pages/NotFound';
 
+function getCommand(entry: unknown): unknown[] | undefined {
+  if (Array.isArray(entry)) return entry;
+  if (typeof entry !== 'object' || entry === null || !('length' in entry)) {
+    return undefined;
+  }
+
+  const command = entry as ArrayLike<unknown>;
+  return typeof command.length === 'number' ? Array.from(command) : undefined;
+}
+
 describe('Google Analytics 4 Module (analytics.ts)', () => {
   beforeEach(() => {
     _resetForTesting();
@@ -68,12 +78,11 @@ describe('Google Analytics 4 Module (analytics.ts)', () => {
     // Verify dataLayer queue contents
     // First call: ['js', Date]
     // Second call: ['config', GA_MEASUREMENT_ID, { send_page_view: false }]
-    const configCall = window.dataLayer.find(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'config' &&
-        entry[1] === GA_MEASUREMENT_ID
-    ) as [string, string, { send_page_view?: boolean }] | undefined;
+    const configCall = window.dataLayer
+      .map(getCommand)
+      .find((entry) => entry?.[0] === 'config' && entry[1] === GA_MEASUREMENT_ID) as
+      | [string, string, { send_page_view?: boolean }]
+      | undefined;
 
     expect(configCall).toBeDefined();
     expect(configCall?.[2]?.send_page_view).toBe(false);
@@ -98,12 +107,11 @@ describe('Google Analytics 4 Module (analytics.ts)', () => {
 
     trackPageView('schedule', 'StudyFlow — Schedule');
 
-    const pageViewCall = window.dataLayer.find(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    ) as [string, string, { page_path: string; page_location: string; page_title: string }] | undefined;
+    const pageViewCall = window.dataLayer
+      .map(getCommand)
+      .find((entry) => entry?.[0] === 'event' && entry[1] === 'page_view') as
+      | [string, string, { page_path: string; page_location: string; page_title: string }]
+      | undefined;
 
     expect(pageViewCall).toBeDefined();
     expect(pageViewCall?.[2].page_path).toBe('/schedule');
@@ -117,12 +125,11 @@ describe('Google Analytics 4 Module (analytics.ts)', () => {
 
     trackEvent('task_completed', { taskId: 'task-101', durationMinutes: 25 });
 
-    const eventCall = window.dataLayer.find(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'task_completed'
-    ) as [string, string, Record<string, unknown>] | undefined;
+    const eventCall = window.dataLayer
+      .map(getCommand)
+      .find((entry) => entry?.[0] === 'event' && entry[1] === 'task_completed') as
+      | [string, string, Record<string, unknown>]
+      | undefined;
 
     expect(eventCall).toBeDefined();
     expect(eventCall?.[2]).toEqual({ taskId: 'task-101', durationMinutes: 25 });
@@ -155,12 +162,9 @@ describe('usePageViewTracking Hook', () => {
       </MemoryRouter>
     );
 
-    const pageViews = window.dataLayer.filter(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    );
+    const pageViews = window.dataLayer
+      .map(getCommand)
+      .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view');
 
     expect(pageViews.length).toBe(1);
     const pv = pageViews[0] as [string, string, { page_path: string; page_title: string }];
@@ -177,12 +181,9 @@ describe('usePageViewTracking Hook', () => {
       </StrictMode>
     );
 
-    const pageViews = window.dataLayer.filter(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    );
+    const pageViews = window.dataLayer
+      .map(getCommand)
+      .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view');
 
     expect(pageViews).toHaveLength(1);
   });
@@ -215,12 +216,9 @@ describe('usePageViewTracking Hook', () => {
     );
 
     const getPageViewCount = () =>
-      window.dataLayer.filter(
-        (entry) =>
-          Array.isArray(entry) &&
-          entry[0] === 'event' &&
-          entry[1] === 'page_view'
-      ).length;
+      window.dataLayer
+        .map(getCommand)
+        .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view').length;
 
     expect(getPageViewCount()).toBe(1);
 
@@ -287,12 +285,13 @@ describe('usePageViewTracking Hook', () => {
       getByTestId('tab-dashboard').click();
     });
 
-    const pageViews = window.dataLayer.filter(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    ) as [string, string, { page_path: string; page_title: string }][];
+    const pageViews = window.dataLayer
+      .map(getCommand)
+      .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view') as [
+      string,
+      string,
+      { page_path: string; page_title: string }
+    ][];
 
     expect(pageViews.length).toBe(4);
     expect(pageViews[0][2].page_path).toBe('/');
@@ -308,12 +307,13 @@ describe('usePageViewTracking Hook', () => {
       </MemoryRouter>
     );
 
-    const pageViews = window.dataLayer.filter(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    ) as [string, string, { page_path: string; page_location: string }][];
+    const pageViews = window.dataLayer
+      .map(getCommand)
+      .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view') as [
+      string,
+      string,
+      { page_path: string; page_location: string }
+    ][];
 
     expect(pageViews.length).toBe(1);
     expect(pageViews[0][2].page_path).toBe('/unmatched-route?src=external');
@@ -328,12 +328,13 @@ describe('usePageViewTracking Hook', () => {
       </MemoryRouter>
     );
 
-    const pageViews = window.dataLayer.filter(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry[0] === 'event' &&
-        entry[1] === 'page_view'
-    ) as [string, string, { page_path: string }][];
+    const pageViews = window.dataLayer
+      .map(getCommand)
+      .filter((entry) => entry?.[0] === 'event' && entry[1] === 'page_view') as [
+      string,
+      string,
+      { page_path: string }
+    ][];
 
     expect(pageViews.length).toBe(1);
     expect(pageViews[0][2].page_path).toBe('/missing-page');
