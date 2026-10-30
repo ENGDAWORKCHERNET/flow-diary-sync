@@ -5,6 +5,7 @@ import DashboardView from '@/components/StudyFlow/DashboardView';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { usePageViewTracking } from '@/hooks/usePageViewTracking';
+import { useClassReminders } from '@/hooks/useClassReminders';
 import { Home, CalendarDays, ListChecks, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,9 @@ export default function Index() {
   const { isStandalone } = usePWAInstall();
   const [fabOpen, setFabOpen] = useState(false);
   const [installPromptOpen, setInstallPromptOpen] = useState(false);
+
+  // Automatically monitor upcoming classes and trigger 15-minute reminders
+  useClassReminders();
 
   // Track page views on initial load and tab switches
   usePageViewTracking(tab);

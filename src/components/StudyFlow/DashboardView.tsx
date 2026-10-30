@@ -32,13 +32,24 @@ export default function DashboardView({
       toast.info("Notifications are not supported in this mobile browser. Add StudyFlow to your Home Screen to enable alerts!");
       return;
     }
+
+    if (Notification.permission === 'granted') {
+      toast.success("Class reminders are active!", {
+        description: "You'll be alerted 15 minutes before every class with your room number.",
+      });
+      sendLocalNotification("Class Reminders Active", "You'll receive alerts 15 minutes before each class with room details.");
+      return;
+    }
+
     const granted = await requestPermission();
     if (granted) {
       setNotificationsEnabled(true);
-      toast.success("Notifications enabled!");
-      sendLocalNotification("Notifications Active", "You'll now receive updates from StudyFlow.");
+      toast.success("Class reminders enabled!", {
+        description: "You'll be alerted 15 minutes before every class with your room number.",
+      });
+      sendLocalNotification("Class Reminders Active", "You'll receive alerts 15 minutes before each class with room details.");
     } else {
-      toast.error("Notification permission denied.");
+      toast.error("Notification permission denied. Enable notifications in browser settings for class reminders.");
     }
   };
 
@@ -77,7 +88,7 @@ export default function DashboardView({
             <button 
               onClick={handleEnableNotifications}
               className={`p-2 rounded-xl transition-all ${notificationsEnabled ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-secondary'}`}
-              title={notificationsEnabled ? "Notifications Active" : "Enable Notifications"}
+              title={notificationsEnabled ? "Class Reminders Active (15m before class)" : "Enable Class Reminders (15m before class)"}
             >
               {notificationsEnabled ? <Bell className="w-4 h-4 fill-primary/20" /> : <BellOff className="w-4 h-4" />}
             </button>
@@ -137,7 +148,16 @@ export default function DashboardView({
                 <p className="text-2xl font-bold font-display text-primary tabular-nums">
                   {formatCountdown(nextClass.minutesUntil)}
                 </p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">until start</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center justify-end gap-1">
+                  {nextClass.minutesUntil <= 15 ? (
+                    <span className="inline-flex items-center gap-0.5 text-primary font-semibold">
+                      <Bell className="w-2.5 h-2.5 animate-pulse" />
+                      starts soon
+                    </span>
+                  ) : (
+                    'until start'
+                  )}
+                </p>
               </div>
             </div>
           )}
