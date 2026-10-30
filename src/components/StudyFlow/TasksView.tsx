@@ -108,16 +108,22 @@ export default function TasksView({ tasks, onToggleTask, onAddTask, onDeleteTask
                           : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                       }`}
                     >
-                      {s.split(' ')[0]}
+                      {s.length > 25 ? `${s.slice(0, 22)}...` : s}
                     </button>
                   ))}
                 </div>
                 <Input
+                  list="tasks-subject-datalist"
                   placeholder="Or custom subject (e.g. Chemistry)"
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
                   className="rounded-xl h-10"
                 />
+                <datalist id="tasks-subject-datalist">
+                  {availableSubjects.map(s => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
               </div>
               <Button type="submit" className="w-full rounded-xl">Create Task</Button>
             </form>

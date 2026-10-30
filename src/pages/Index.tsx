@@ -170,16 +170,22 @@ export default function Index() {
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                     }`}
                   >
-                    {s.split(' ')[0]}
+                    {s.length > 25 ? `${s.slice(0, 22)}...` : s}
                   </button>
                 ))}
               </div>
               <Input
+                list="quick-task-subject-datalist"
                 placeholder="Or custom subject (e.g. Physics)"
                 value={qSubject}
                 onChange={e => setQSubject(e.target.value)}
                 className="rounded-xl h-10"
               />
+              <datalist id="quick-task-subject-datalist">
+                {availableSubjects.map(s => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
             </div>
             <Button type="submit" className="w-full rounded-xl">Add Task</Button>
           </form>

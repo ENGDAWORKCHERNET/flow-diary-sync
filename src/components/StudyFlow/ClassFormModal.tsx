@@ -43,14 +43,70 @@ export default function ClassFormModal({
   const [isLab, setIsLab] = useState<boolean>(false);
   const [labGroup, setLabGroup] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState<boolean>(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   // Available subject suggestions: subjects in schedule first, then default subjects
-  const knownSubjects = Array.from(
+  const scheduleSubjects = Array.from(
+    new Set(
+      schedule
+        .map(s => s.subject?.trim())
+        .filter((s): s is string => Boolean(s && s.length > 0))
+    )
+  );
+
+  const allKnownSubjects = Array.from(
     new Set([
-      ...schedule.map(s => s.subject).filter(Boolean),
+      ...scheduleSubjects,
       ...SUBJECTS,
     ])
   );
+
+  const query = subject.trim().toLowerCase();
+
+  const filteredSuggestions = allKnownSubjects
+    .filter(s => {
+      if (!query) return true;
+      return s.toLowerCase().includes(query);
+    })
+    .sort((a, b) => {
+      if (!query) {
+        // Prioritize existing schedule classes over default subjects
+        const aInSchedule = scheduleSubjects.includes(a);
+        const bInSchedule = scheduleSubjects.includes(b);
+        if (aInSchedule && !bInSchedule) return -1;
+        if (!aInSchedule && bInSchedule) return 1;
+        return 0;
+      }
+
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+
+      // Words in subject
+      const aWords = aLower.split(/[\s\-&/:]+/).filter(Boolean);
+      const bWords = bLower.split(/[\s\-&/:]+/).filter(Boolean);
+
+      const aWordStarts = aWords.some(w => w.startsWith(query));
+      const bWordStarts = bWords.some(w => w.startsWith(query));
+
+      // Classes already in user's schedule take highest priority
+      const aInSchedule = scheduleSubjects.includes(a);
+      const bInSchedule = scheduleSubjects.includes(b);
+      if (aInSchedule && !bInSchedule && (aWordStarts || aLower.includes(query))) return -1;
+      if (!aInSchedule && bInSchedule && (bWordStarts || bLower.includes(query))) return 1;
+
+      // 1. Any word starts with query (e.g. "Data" in "SE2231 - Data Structures" or "Computer" in "SE2205 - Computer Org")
+      if (aWordStarts && !bWordStarts) return -1;
+      if (!aWordStarts && bWordStarts) return 1;
+
+      // 2. Starts with query
+      const aStarts = aLower.startsWith(query);
+      const bStarts = bLower.startsWith(query);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+
+      return a.localeCompare(b);
+    });
 
   // Sync form when opening or editingSession changes
   useEffect(() => {
@@ -79,6 +135,8 @@ export default function ClassFormModal({
       setLabGroup('');
       setIsDeleting(false);
     }
+    setShowSubjectDropdown(false);
+    setHighlightedIndex(-1);
   }, [editingSession, open]);
 
   const handlePeriodChange = (periodName: string) => {
@@ -265,33 +323,130 @@ export default function ClassFormModal({
             </div>
           </div>
 
-          {/* Subject Input & Suggestions */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {/* Subject Input & Autofill Suggestions */}
+          <div className="space-y-1.5 relative">
+            <Label htmlFor="class-subject-input" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Subject Name
             </Label>
-            <Input
-              placeholder="e.g. Mathematics, Biology 101, Web Development..."
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              className="rounded-xl"
-              required
-            />
-            {knownSubjects.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap pt-1">
-                <span className="text-[10px] text-muted-foreground self-center">Suggestions:</span>
-                {knownSubjects.slice(0, 5).map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSubject(s)}
-                    className={`text-[11px] px-2 py-0.5 rounded-lg border border-border/50 transition-colors ${
-                      subject === s ? 'bg-primary/15 text-primary border-primary/40 font-semibold' : 'bg-secondary/50 hover:bg-secondary text-muted-foreground'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+            <div className="relative">
+              <Input
+                id="class-subject-input"
+                placeholder="e.g. Mathematics, Biology 101, Web Development..."
+                value={subject}
+                onChange={e => {
+                  setSubject(e.target.value);
+                  setShowSubjectDropdown(true);
+                  setHighlightedIndex(-1);
+                }}
+                onFocus={() => setShowSubjectDropdown(true)}
+                onBlur={() => {
+                  setTimeout(() => setShowSubjectDropdown(false), 200);
+                }}
+                onKeyDown={e => {
+                  if (!showSubjectDropdown || filteredSuggestions.length === 0) return;
+                  const maxIndex = Math.min(filteredSuggestions.length, 6) - 1;
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setHighlightedIndex(prev => (prev < maxIndex ? prev + 1 : 0));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setHighlightedIndex(prev => (prev > 0 ? prev - 1 : maxIndex));
+                  } else if (e.key === 'Enter') {
+                    if (highlightedIndex >= 0 && highlightedIndex <= maxIndex) {
+                      e.preventDefault();
+                      setSubject(filteredSuggestions[highlightedIndex]);
+                      setShowSubjectDropdown(false);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowSubjectDropdown(false);
+                  }
+                }}
+                className="rounded-xl"
+                autoComplete="off"
+                required
+              />
+
+              {/* Floating Autofill Dropdown when typing */}
+              {showSubjectDropdown && query.length > 0 && filteredSuggestions.length > 0 && (
+                <div
+                  role="listbox"
+                  className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-popover text-popover-foreground border border-border/80 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto"
+                >
+                  <div className="p-1">
+                    <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Autofill Suggestions
+                    </div>
+                    {filteredSuggestions.slice(0, 6).map((item, idx) => {
+                      const isScheduleItem = scheduleSubjects.includes(item);
+                      const isHighlighted = highlightedIndex === idx;
+                      const isExactMatch = subject.trim().toLowerCase() === item.toLowerCase();
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onMouseDown={e => {
+                            e.preventDefault();
+                            setSubject(item);
+                            setShowSubjectDropdown(false);
+                          }}
+                          onClick={() => {
+                            setSubject(item);
+                            setShowSubjectDropdown(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                            isHighlighted || isExactMatch
+                              ? 'bg-primary/15 text-primary font-medium'
+                              : 'hover:bg-accent hover:text-accent-foreground text-foreground'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${getSubjectColor(item)}`} />
+                            <span className="truncate">{item}</span>
+                          </div>
+                          {isScheduleItem ? (
+                            <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded font-normal shrink-0 ml-2">
+                              Your Class
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                              Default
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Suggestions Chips Part */}
+            {filteredSuggestions.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap pt-1 items-center">
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {query.length > 0 ? 'Matching:' : 'Suggestions:'}
+                </span>
+                {filteredSuggestions.slice(0, 6).map(s => {
+                  const isSelected = subject.trim().toLowerCase() === s.toLowerCase();
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setSubject(s);
+                        setShowSubjectDropdown(false);
+                      }}
+                      className={`text-[11px] px-2.5 py-0.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-primary/20 text-primary border-primary/40 font-semibold shadow-xs'
+                          : 'bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground border-border/50'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${getSubjectColor(s)}`} />
+                      <span>{s}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
