@@ -20,6 +20,7 @@ import {
   Waves,
   TreePine,
   Flower2,
+  Zap,
 } from 'lucide-react';
 
 interface ThemeOption {
@@ -87,6 +88,13 @@ const THEME_OPTIONS: ThemeOption[] = [
     primaryHex: '#db2777',
     icon: Flower2,
   },
+  {
+    id: 'cyberpunk',
+    label: 'Cyberpunk',
+    bgHex: '#08080c',
+    primaryHex: '#ff2a85',
+    icon: Zap,
+  },
 ];
 
 function getThemeIcon(theme: Theme, resolved: ResolvedTheme): typeof Sun {
@@ -106,6 +114,8 @@ function getThemeIcon(theme: Theme, resolved: ResolvedTheme): typeof Sun {
       return TreePine;
     case 'rose':
       return Flower2;
+    case 'cyberpunk':
+      return Zap;
     default:
       return Sun;
   }

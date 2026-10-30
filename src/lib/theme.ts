@@ -6,7 +6,8 @@ export type Theme =
   | 'sepia'
   | 'ocean'
   | 'forest'
-  | 'rose';
+  | 'rose'
+  | 'cyberpunk';
 
 export type ResolvedTheme =
   | 'light'
@@ -15,7 +16,8 @@ export type ResolvedTheme =
   | 'sepia'
   | 'ocean'
   | 'forest'
-  | 'rose';
+  | 'rose'
+  | 'cyberpunk';
 
 export const THEMES: readonly Theme[] = [
   'system',
@@ -26,6 +28,7 @@ export const THEMES: readonly Theme[] = [
   'ocean',
   'forest',
   'rose',
+  'cyberpunk',
 ] as const;
 
 export const RESOLVED_THEMES: readonly ResolvedTheme[] = [
@@ -36,6 +39,7 @@ export const RESOLVED_THEMES: readonly ResolvedTheme[] = [
   'ocean',
   'forest',
   'rose',
+  'cyberpunk',
 ] as const;
 
 export const STORAGE_KEY = 'studyflow_theme';
@@ -49,6 +53,7 @@ export const THEME_META_COLORS: Record<ResolvedTheme, string> = {
   ocean: '#0a1526',
   forest: '#0a1811',
   rose: '#fdf2f4',
+  cyberpunk: '#08080c',
 };
 
 export const DARK_THEMES: readonly ResolvedTheme[] = [
@@ -56,6 +61,7 @@ export const DARK_THEMES: readonly ResolvedTheme[] = [
   'midnight',
   'ocean',
   'forest',
+  'cyberpunk',
 ] as const;
 
 export function isValidTheme(val: unknown): val is Theme {

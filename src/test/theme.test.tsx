@@ -109,14 +109,14 @@ describe('StudyFlow Theme System', () => {
       expect(resolveTheme('system')).toBe('dark');
     });
 
-    it('never resolves "system" to midnight, sepia, ocean, forest, or rose', () => {
+    it('never resolves "system" to midnight, sepia, ocean, forest, rose, or cyberpunk', () => {
       isDarkMode = false;
       const lightResolved = resolveTheme('system');
-      expect(['midnight', 'sepia', 'ocean', 'forest', 'rose']).not.toContain(lightResolved);
+      expect(['midnight', 'sepia', 'ocean', 'forest', 'rose', 'cyberpunk']).not.toContain(lightResolved);
 
       isDarkMode = true;
       const darkResolved = resolveTheme('system');
-      expect(['midnight', 'sepia', 'ocean', 'forest', 'rose']).not.toContain(darkResolved);
+      expect(['midnight', 'sepia', 'ocean', 'forest', 'rose', 'cyberpunk']).not.toContain(darkResolved);
     });
 
     it('resolves explicit themes to themselves regardless of OS preference', () => {
@@ -316,7 +316,7 @@ describe('StudyFlow Theme System', () => {
       });
 
       const radioItems = await screen.findAllByRole('menuitemradio');
-      expect(radioItems.length).toBe(8); // system + 7 themes
+      expect(radioItems.length).toBe(9); // system + 8 themes (including cyberpunk)
 
       // Check that each option has an aria-label
       radioItems.forEach((item) => {
