@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import {
   type ClassSession,
   SCHEDULE,
@@ -9,6 +9,7 @@ import {
   getNextClass as getNextClassHelper,
   getCurrentClass as getCurrentClassHelper,
 } from '@/lib/data';
+import { syncScheduleWithServer } from '@/lib/notifications';
 
 export interface ScheduleContextType {
   schedule: ClassSession[];
@@ -25,6 +26,11 @@ const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined
 
 export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [schedule, setSchedule] = useState<ClassSession[]>(() => loadSchedule());
+
+  // Keep the server's push subscription record in sync whenever schedule changes
+  useEffect(() => {
+    syncScheduleWithServer(schedule);
+  }, [schedule]);
 
   const addClass = useCallback((newSession: Omit<ClassSession, 'id'>) => {
     const overlapResult = checkScheduleOverlap(schedule, newSession);

@@ -8,11 +8,108 @@ export const setSWRegistration = (registration: ServiceWorkerRegistration) => {
   swRegistration = registration;
 };
 
+// ─── Web Push helpers ─────────────────────────────────────────────────────────
+
+/** Convert a VAPID base64url public key to a Uint8Array for pushManager.subscribe */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
+export const isPushSupported = (): boolean =>
+  typeof window !== 'undefined' &&
+  'serviceWorker' in navigator &&
+  'PushManager' in window;
+
+/**
+ * Subscribe the current browser to Web Push and persist the subscription + schedule
+ * on the server so the Vercel cron job can fire reminders even when the app is closed.
+ */
+export async function subscribeToPush(schedule: ClassSession[]): Promise<boolean> {
+  if (!isPushSupported()) return false;
+
+  try {
+    // 1. Fetch the VAPID public key from the server
+    const resp = await fetch('/api/vapid-public-key');
+    if (!resp.ok) return false;
+    const { publicKey } = await resp.json() as { publicKey: string };
+    if (!publicKey) return false;
+
+    // 2. Get the active SW registration
+    const sw = await navigator.serviceWorker.ready;
+
+    // 3. Subscribe (or reuse existing)
+    const subscription = await sw.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    // 4. Send subscription + schedule to our API
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const saveResp = await fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription, schedule, timezone: tz }),
+    });
+
+    return saveResp.ok;
+  } catch (err) {
+    console.error('[push] subscribe failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Unsubscribe from Web Push and remove the record from the server.
+ */
+export async function unsubscribeFromPush(): Promise<void> {
+  if (!isPushSupported()) return;
+  try {
+    const sw = await navigator.serviceWorker.ready;
+    const subscription = await sw.pushManager.getSubscription();
+    if (!subscription) return;
+
+    await fetch('/api/push-subscribe', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    });
+
+    await subscription.unsubscribe();
+  } catch (err) {
+    console.error('[push] unsubscribe failed:', err);
+  }
+}
+
+/**
+ * Re-sync the stored schedule on the server whenever the user edits their classes.
+ * This keeps server-side reminders up-to-date without re-subscribing.
+ */
+export async function syncScheduleWithServer(schedule: ClassSession[]): Promise<void> {
+  if (!isPushSupported()) return;
+  try {
+    const sw = await navigator.serviceWorker.ready;
+    const subscription = await sw.pushManager.getSubscription();
+    if (!subscription) return; // not subscribed yet
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    await fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription, schedule, timezone: tz }),
+    });
+  } catch {
+    // Non-critical — in-app reminders still work
+  }
+}
+
 export const isNotificationSupported = (): boolean => {
   return typeof window !== 'undefined' && 'Notification' in window && typeof Notification !== 'undefined';
 };
 
-export const requestNotificationPermission = async (): Promise<boolean> => {
+export const requestNotificationPermission = async (schedule?: ClassSession[]): Promise<boolean> => {
   if (!isNotificationSupported()) {
     console.warn("This browser or platform does not support web notifications.");
     return false;
@@ -20,6 +117,10 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 
   try {
     const permission = await Notification.requestPermission();
+    if (permission === "granted" && schedule) {
+      // Also subscribe to Web Push for background/lock-screen notifications
+      await subscribeToPush(schedule);
+    }
     return permission === "granted";
   } catch (error) {
     console.error("Failed to request notification permission:", error);

@@ -67,6 +67,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     VitePWA({
+      // injectManifest lets us write a custom sw.ts with push event handling
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: [
         "favicon.ico",
@@ -79,32 +83,11 @@ export default defineConfig(({ mode }) => {
       ],
       // Tell the browser the SW controls all navigations
       injectRegister: "auto",
-      workbox: {
+      injectManifest: {
         // Precache the app shell
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest}"],
-        // Never cache GA collection requests
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/sw\.js/],
-        runtimeCaching: [
-          {
-            // Cache images with a cache-first strategy
-            urlPattern: /\.(?:png|ico|svg|jpg|jpeg|webp|gif)$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "images",
-              expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
-            },
-          },
-          {
-            // Network-first for navigation (fresh HTML always tried first)
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "pages",
-              networkTimeoutSeconds: 5,
-            },
-          },
-        ],
+        // Never cache API or the raw SW
+        globIgnores: ["**/node_modules/**/*", "sw.js", "workbox-*.js"],
       },
       manifest: {
         id: "/",

@@ -5,7 +5,7 @@ import {
 } from '@/lib/data';
 import { useSchedule } from '@/context/ScheduleContext';
 import { Clock, BookOpen, Sparkles, TrendingUp, CheckCircle2, Bell, BellOff } from 'lucide-react';
-import { requestPermission, sendLocalNotification, isNotificationSupported } from '@/lib/notifications';
+import { requestPermission, sendLocalNotification, isNotificationSupported, subscribeToPush, isPushSupported } from '@/lib/notifications';
 import { toast } from 'sonner';
 
 export default function DashboardView({ 
@@ -34,18 +34,30 @@ export default function DashboardView({
     }
 
     if (Notification.permission === 'granted') {
-      toast.success("Class reminders are active!", {
-        description: "You'll be alerted 15 minutes before every class with your room number.",
-      });
+      // Already have permission — make sure push subscription is active
+      if (isPushSupported()) {
+        const ok = await subscribeToPush(schedule);
+        toast.success(ok ? "Background reminders active! 🔔" : "Class reminders are active!", {
+          description: "You'll be alerted 15 minutes before every class — even with the app closed.",
+        });
+      } else {
+        toast.success("Class reminders are active!", {
+          description: "You'll be alerted 15 minutes before every class with your room number.",
+        });
+      }
       sendLocalNotification("Class Reminders Active", "You'll receive alerts 15 minutes before each class with room details.");
       return;
     }
 
-    const granted = await requestPermission();
+    const granted = await requestPermission(schedule);
     if (granted) {
       setNotificationsEnabled(true);
-      toast.success("Class reminders enabled!", {
-        description: "You'll be alerted 15 minutes before every class with your room number.",
+      // Also subscribe to push for background delivery
+      const pushOk = isPushSupported() ? await subscribeToPush(schedule) : false;
+      toast.success(pushOk ? "Background reminders enabled! 🔔" : "Class reminders enabled!", {
+        description: pushOk
+          ? "You'll get lock-screen alerts 15 minutes before class, even with the app closed."
+          : "You'll be alerted 15 minutes before every class with your room number.",
       });
       sendLocalNotification("Class Reminders Active", "You'll receive alerts 15 minutes before each class with room details.");
     } else {
