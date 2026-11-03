@@ -6,7 +6,8 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { usePageViewTracking } from '@/hooks/usePageViewTracking';
 import { useClassReminders } from '@/hooks/useClassReminders';
-import { Home, CalendarDays, ListChecks, Plus, Download } from 'lucide-react';
+import AttendancePrompt from '@/components/StudyFlow/AttendancePrompt';
+import { Home, CalendarDays, ListChecks, ClipboardCheck, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +16,9 @@ import { SUBJECTS, getSubjectColor } from '@/lib/data';
 import { useSchedule } from '@/context/ScheduleContext';
 
 // Lazy-load heavier views — only downloaded when the user taps that tab
-const ScheduleView = lazy(() => import('@/components/StudyFlow/ScheduleView'));
-const TasksView    = lazy(() => import('@/components/StudyFlow/TasksView'));
+const ScheduleView    = lazy(() => import('@/components/StudyFlow/ScheduleView'));
+const TasksView       = lazy(() => import('@/components/StudyFlow/TasksView'));
+const AttendanceView  = lazy(() => import('@/components/StudyFlow/AttendanceView'));
 
 function TabSpinner() {
   return (
@@ -26,7 +28,7 @@ function TabSpinner() {
   );
 }
 
-type Tab = 'dashboard' | 'schedule' | 'tasks';
+type Tab = 'dashboard' | 'schedule' | 'tasks' | 'attendance';
 
 export default function Index() {
   const { schedule } = useSchedule();
@@ -96,9 +98,10 @@ export default function Index() {
   };
 
   const tabs: { key: Tab; label: string; icon: typeof Home }[] = [
-    { key: 'dashboard', label: 'Home', icon: Home },
-    { key: 'schedule', label: 'Schedule', icon: CalendarDays },
-    { key: 'tasks', label: 'Tasks', icon: ListChecks },
+    { key: 'dashboard',  label: 'Home',       icon: Home },
+    { key: 'schedule',   label: 'Schedule',   icon: CalendarDays },
+    { key: 'tasks',      label: 'Tasks',      icon: ListChecks },
+    { key: 'attendance', label: 'Attendance', icon: ClipboardCheck },
   ];
 
   return (
@@ -127,8 +130,9 @@ export default function Index() {
       <main className="px-4 pb-24 max-w-lg mx-auto">
         {tab === 'dashboard' && <DashboardView tasks={tasks} onToggleTask={toggleTask} />}
         <Suspense fallback={<TabSpinner />}>
-          {tab === 'schedule' && <ScheduleView />}
-          {tab === 'tasks' && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
+          {tab === 'schedule'   && <ScheduleView />}
+          {tab === 'tasks'      && <TasksView tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} onDeleteTask={deleteTask} onSaveSession={handleSaveSession} />}
+          {tab === 'attendance' && <AttendanceView />}
         </Suspense>
       </main>
 
@@ -217,6 +221,9 @@ export default function Index() {
           })}
         </div>
       </nav>
+
+      {/* Attendance prompt — appears automatically after a class ends */}
+      <AttendancePrompt />
 
       {/* PWA Download / Install Pop-Up */}
       <PWAInstallPrompt
