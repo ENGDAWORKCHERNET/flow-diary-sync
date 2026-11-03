@@ -15,7 +15,8 @@ import { parseScheduleImage, type ParsedClass } from '@/lib/groqSchedule';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LoaderCircle, Plus } from 'lucide-react';
+import { LoaderCircle, Plus, UserX, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useAttendance } from '@/context/AttendanceContext';
 
 const DAYS_WITH_CLASSES = [1, 2, 3, 4, 5, 6, 0]; // Mon to Sun
 
@@ -41,12 +42,41 @@ function isValidTime(value: string): boolean {
 
 export default function ScheduleView() {
   const { schedule, addClass } = useSchedule();
+  const { recordMissedClass, getSubjectStat, undoLastAbsence } = useAttendance();
   const today = new Date().getDay();
 
   const [formOpen, setFormOpen] = useState<boolean>(false);
   const [editingSession, setEditingSession] = useState<ClassSession | null>(null);
   const [choiceOpen, setChoiceOpen] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [loadingSubject, setLoadingSubject] = useState<string | null>(null);
+
+  const handleRecordMissed = (e: React.MouseEvent, session: ClassSession) => {
+    e.stopPropagation();
+    if (loadingSubject === session.id) return;
+
+    setLoadingSubject(session.id);
+    try {
+      const record = recordMissedClass(session.subject, session.id, 'Schedule quick action');
+      const stat = getSubjectStat(session.subject);
+      const newMissed = (stat?.absent ?? 0) + 1;
+      const maxAllowed = stat?.maxAbsences ?? 5;
+      const remaining = Math.max(0, maxAllowed - newMissed);
+
+      toast.error(`Missed class recorded for ${session.subject}`, {
+        description: `Missed: ${newMissed}/${maxAllowed} (${remaining} remaining)`,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            undoLastAbsence(session.subject);
+            toast.info(`Undid missed class for ${session.subject}`);
+          },
+        },
+      });
+    } finally {
+      setTimeout(() => setLoadingSubject(null), 350);
+    }
+  };
   const [previewOpen, setPreviewOpen] = useState(false);
   const [parsedClasses, setParsedClasses] = useState<ParsedClass[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -218,30 +248,85 @@ export default function ScheduleView() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              {classes.map(c => (
-                <div
-                  key={c.id}
-                  onClick={() => handleOpenEdit(c)}
-                  role="button"
-                  tabIndex={0}
-                  title="Click to edit or remove class"
-                  className={`${c.colorClass} rounded-xl p-3 flex justify-between items-center cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{c.subject}</span>
-                    {c.isLab && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-black/20 text-white px-2 py-0.5 rounded-md shadow-sm">
-                        LAB • {c.labGroup}
-                      </span>
-                    )}
+            <div className="space-y-2.5">
+              {classes.map(c => {
+                const stat = getSubjectStat(c.subject);
+                const missed = stat?.absent ?? 0;
+                const max = stat?.maxAbsences ?? 5;
+                const remaining = Math.max(0, max - missed);
+                const isCritical = remaining <= 1;
+                const isLimitReached = missed >= max;
+
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => handleOpenEdit(c)}
+                    role="button"
+                    tabIndex={0}
+                    title="Click to edit or remove class"
+                    className={`${c.colorClass} rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all shadow-sm border border-black/5 dark:border-white/5`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm leading-snug">{c.subject}</span>
+                        {c.isLab && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-black/25 text-white px-2 py-0.5 rounded-md shadow-sm">
+                            LAB • {c.labGroup}
+                          </span>
+                        )}
+                        {missed > 0 && (
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                              isLimitReached
+                                ? 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40'
+                                : isCritical
+                                ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40'
+                                : 'bg-black/15 dark:bg-white/15 text-foreground border-transparent'
+                            }`}
+                          >
+                            {missed}/{max} missed
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs opacity-80 mt-1 flex items-center gap-1.5">
+                        <span>{formatTime12(c.startTime)} – {formatTime12(c.endTime)}</span>
+                        {c.room && (
+                          <>
+                            <span className="opacity-50">•</span>
+                            <span>Room {c.room}</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Attendance Action */}
+                    <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={loadingSubject === c.id}
+                        onClick={e => handleRecordMissed(e, c)}
+                        className={`h-8 px-2.5 rounded-xl text-xs font-semibold shadow-sm transition-transform active:scale-95 flex items-center gap-1.5 ${
+                          isLimitReached
+                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-300 border border-red-500/30'
+                            : isCritical
+                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 border border-amber-500/30'
+                            : 'bg-background/80 hover:bg-background text-foreground'
+                        }`}
+                        title="Record a missed class for this subject"
+                      >
+                        {loadingSubject === c.id ? (
+                          <LoaderCircle className="w-3.5 h-3.5 animate-spin text-red-500" />
+                        ) : (
+                          <UserX className="w-3.5 h-3.5 text-red-500" />
+                        )}
+                        <span>Missed Class</span>
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-xs opacity-80 whitespace-nowrap ml-2">
-                    {formatTime12(c.startTime)} – {formatTime12(c.endTime)}
-                    {c.room && ` • ${c.room}`}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

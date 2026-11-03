@@ -13,6 +13,7 @@ import {
   type AttendanceRecord,
   type AttendanceSettings,
   type SubjectAttendanceStat,
+  type OverallAttendanceSummary,
   loadAttendanceRecords,
   saveAttendanceRecords,
   loadAttendanceSettings,
@@ -33,24 +34,33 @@ export interface PendingPrompt {
   occurrenceKey: string;
 }
 
-interface AttendanceContextType {
+export interface AttendanceContextType {
   records: AttendanceRecord[];
   settings: AttendanceSettings;
   stats: SubjectAttendanceStat[];
+  overall: OverallAttendanceSummary;
   /** The class that just ended and needs an attendance response. null = no prompt. */
   pendingPrompt: PendingPrompt | null;
-  /** User taps "Yes, I attended" */
+  /** Record a missed class directly (from Schedule or UI) */
+  recordMissedClass: (subject: string, sessionId?: string, note?: string) => AttendanceRecord;
+  /** Record an attended class */
+  recordAttendedClass: (subject: string, sessionId?: string, note?: string) => AttendanceRecord;
+  /** User taps "Yes, I attended" on auto prompt */
   recordAttended: (occurrenceKey: string, session: ClassSession, date: string) => void;
-  /** User taps "No, I skipped" */
+  /** User taps "No, I skipped" on auto prompt */
   recordAbsent: (occurrenceKey: string, session: ClassSession, date: string) => void;
-  /** Dismiss the prompt without recording (user can answer later via the log) */
+  /** Dismiss the prompt without recording */
   dismissPrompt: () => void;
   /** Update how many absences are allowed for a subject (or the global default) */
   updateMaxAbsences: (subject: string | '__default__', value: number) => void;
-  /** Manually delete an attendance record */
+  /** Manually delete an attendance record (with immediate state update) */
   deleteRecord: (id: string) => void;
   /** Wipe all records */
   clearAllRecords: () => void;
+  /** Undo the most recently recorded absence for a specific subject or globally */
+  undoLastAbsence: (subject?: string) => AttendanceRecord | null;
+  /** Get stats for a specific subject */
+  getSubjectStat: (subject: string) => SubjectAttendanceStat | undefined;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -66,8 +76,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const promptedKeysRef = useRef<Set<string>>(loadPromptedKeys());
 
   // ── Persist records whenever they change ───────────────────────────────────
-  useEffect(() => { saveAttendanceRecords(records); }, [records]);
-  useEffect(() => { saveAttendanceSettings(settings); }, [settings]);
+  useEffect(() => {
+    saveAttendanceRecords(records);
+  }, [records]);
+
+  useEffect(() => {
+    saveAttendanceSettings(settings);
+  }, [settings]);
 
   // ── Poll every 60 s: look for classes that just ended ────────────────────
   useEffect(() => {
@@ -99,41 +114,81 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    checkForEndedClasses(); // run immediately on mount / schedule change
+    checkForEndedClasses();
     const id = setInterval(checkForEndedClasses, 60_000);
     return () => clearInterval(id);
   }, [schedule]);
 
-  // ── Record helpers ─────────────────────────────────────────────────────────
-  const addRecord = useCallback(
-    (session: ClassSession, date: string, attended: boolean) => {
+  // ── Direct recording helpers (Schedule page action) ──────────────────────────
+  const recordMissedClass = useCallback(
+    (subject: string, sessionId?: string, note: string = 'From Schedule'): AttendanceRecord => {
+      const newRecord: AttendanceRecord = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `att_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        sessionId,
+        subject,
+        date: todayDateStr(),
+        attended: false,
+        recordedAt: new Date().toISOString(),
+        note,
+      };
+
+      setRecords(prev => [...prev, newRecord]);
+      return newRecord;
+    },
+    []
+  );
+
+  const recordAttendedClass = useCallback(
+    (subject: string, sessionId?: string, note: string = 'Manual Attended'): AttendanceRecord => {
+      const newRecord: AttendanceRecord = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `att_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        sessionId,
+        subject,
+        date: todayDateStr(),
+        attended: true,
+        recordedAt: new Date().toISOString(),
+        note,
+      };
+
+      setRecords(prev => [...prev, newRecord]);
+      return newRecord;
+    },
+    []
+  );
+
+  // ── Auto-prompt actions ───────────────────────────────────────────────────
+  const recordAttended = useCallback(
+    (occurrenceKey: string, session: ClassSession, date: string) => {
       const record: AttendanceRecord = {
-        id: crypto.randomUUID?.() ?? `att_${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `att_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         sessionId: session.id,
         subject: session.subject,
         date,
-        attended,
+        attended: true,
         recordedAt: new Date().toISOString(),
+        note: 'Auto-Prompt',
       };
       setRecords(prev => [...prev, record]);
-    },
-    [],
-  );
-
-  const recordAttended = useCallback(
-    (occurrenceKey: string, session: ClassSession, date: string) => {
-      addRecord(session, date, true);
       setPendingPrompt(p => (p?.occurrenceKey === occurrenceKey ? null : p));
     },
-    [addRecord],
+    []
   );
 
   const recordAbsent = useCallback(
     (occurrenceKey: string, session: ClassSession, date: string) => {
-      addRecord(session, date, false);
+      const record: AttendanceRecord = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `att_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        sessionId: session.id,
+        subject: session.subject,
+        date,
+        attended: false,
+        recordedAt: new Date().toISOString(),
+        note: 'Auto-Prompt',
+      };
+      setRecords(prev => [...prev, record]);
       setPendingPrompt(p => (p?.occurrenceKey === occurrenceKey ? null : p));
     },
-    [addRecord],
+    []
   );
 
   const dismissPrompt = useCallback(() => setPendingPrompt(null), []);
@@ -141,9 +196,12 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const updateMaxAbsences = useCallback((subject: string | '__default__', value: number) => {
     setSettings(prev => {
       if (subject === '__default__') {
-        return { ...prev, defaultMaxAbsences: value };
+        return { ...prev, defaultMaxAbsences: Math.max(1, value) };
       }
-      return { ...prev, perSubject: { ...prev.perSubject, [subject]: value } };
+      return {
+        ...prev,
+        perSubject: { ...prev.perSubject, [subject]: Math.max(1, value) },
+      };
     });
   }, []);
 
@@ -157,26 +215,78 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     savePromptedKeys(promptedKeysRef.current);
   }, []);
 
-  const stats = useMemo(() => computeStats(records, settings), [records, settings]);
+  const undoLastAbsence = useCallback((subject?: string): AttendanceRecord | null => {
+    let removedRecord: AttendanceRecord | null = null;
+
+    setRecords(prev => {
+      // Find the latest missed record (optionally matching subject)
+      const missedIndices: number[] = [];
+      prev.forEach((r, idx) => {
+        if (!r.attended && (!subject || r.subject === subject)) {
+          missedIndices.push(idx);
+        }
+      });
+
+      if (missedIndices.length === 0) return prev;
+
+      const targetIdx = missedIndices[missedIndices.length - 1];
+      removedRecord = prev[targetIdx];
+      return prev.filter((_, idx) => idx !== targetIdx);
+    });
+
+    return removedRecord;
+  }, []);
+
+  const scheduledSubjects = useMemo(() => {
+    return Array.from(new Set(schedule.map(s => s.subject).filter(Boolean)));
+  }, [schedule]);
+
+  const { subjectStats, overall } = useMemo(() => {
+    return computeStats(records, settings, scheduledSubjects);
+  }, [records, settings, scheduledSubjects]);
+
+  const getSubjectStat = useCallback(
+    (subject: string) => {
+      return subjectStats.find(s => s.subject === subject);
+    },
+    [subjectStats]
+  );
 
   const value = useMemo<AttendanceContextType>(
     () => ({
       records,
       settings,
-      stats,
+      stats: subjectStats,
+      overall,
       pendingPrompt,
+      recordMissedClass,
+      recordAttendedClass,
       recordAttended,
       recordAbsent,
       dismissPrompt,
       updateMaxAbsences,
       deleteRecord,
       clearAllRecords,
+      undoLastAbsence,
+      getSubjectStat,
     }),
     [
-      records, settings, stats, pendingPrompt,
-      recordAttended, recordAbsent, dismissPrompt,
-      updateMaxAbsences, deleteRecord, clearAllRecords,
-    ],
+      records,
+      settings,
+      subjectStats,
+      overall,
+      pendingPrompt,
+      recordMissedClass,
+      recordAttendedClass,
+      recordAttended,
+      recordAbsent,
+      dismissPrompt,
+      updateMaxAbsences,
+      deleteRecord,
+      clearAllRecords,
+      undoLastAbsence,
+      getSubjectStat,
+    ]
   );
 
   return (
