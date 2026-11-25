@@ -80,27 +80,27 @@ export default function AttendanceView() {
   );
 
   return (
-    <div className="space-y-4 animate-fade-in pb-10">
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Header */}
-      <div className="glass-card p-5 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold font-display">Attendance Hub</h2>
+      <div className="glass-card p-5 sm:p-6 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-xl font-bold font-display tracking-tight">Attendance Hub</h2>
             {overall.totalRecorded > 0 && overall.currentStreak > 0 && (
-              <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                 <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                 <span>{overall.currentStreak} streak</span>
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Monitor absences, set course allowances & stay on track
           </p>
         </div>
         <button
           type="button"
           onClick={() => setShowSettings(s => !s)}
-          className={`w-10 h-10 rounded-2xl glass-card flex items-center justify-center transition-all ${
+          className={`w-10 h-10 rounded-2xl glass-card flex items-center justify-center shrink-0 transition-all ${
             showSettings ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
           }`}
           title="Attendance Settings"
@@ -110,61 +110,63 @@ export default function AttendanceView() {
       </div>
 
       {/* Motivational / Status Ribbon */}
-      <div className="glass-card-solid rounded-2xl p-4 border border-border/50 bg-gradient-to-r from-primary/10 via-secondary/40 to-primary/5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+      <div className="glass-card-solid rounded-2xl p-4 sm:p-5 border border-border/50 bg-gradient-to-r from-primary/10 via-secondary/40 to-primary/5 flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
           <Sparkles className="w-4 h-4" />
         </div>
-        <p className="text-xs font-medium text-foreground/90 leading-relaxed">
+        <p className="text-xs sm:text-sm font-medium text-foreground/90 leading-relaxed">
           {overall.motivationalMessage}
         </p>
       </div>
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="glass-card p-5 space-y-4 animate-fade-in border border-primary/20 shadow-lg">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm">Absence Limit Configuration</h3>
-            <span className="text-[10px] text-muted-foreground">Applies per semester/term</span>
+        <div className="glass-card p-5 sm:p-6 space-y-5 animate-fade-in border border-primary/20 shadow-lg">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-bold text-sm">Absence Limit Configuration</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Define how many classes can be missed before critical alerts trigger. Defaults to 5.
+              </p>
+            </div>
+            <span className="text-[11px] text-muted-foreground shrink-0">Per term</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Define how many classes can be missed before critical alerts trigger. Defaults to 5.
-          </p>
 
           {/* Global default */}
-          <div className="flex items-center justify-between gap-4 p-3 rounded-2xl bg-secondary/50">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-secondary/50">
             <div>
               <p className="text-xs font-semibold">Global Default</p>
-              <p className="text-[10px] text-muted-foreground">Used for courses without an override</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Used for courses without an override</p>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Input
                 type="number"
                 min={1}
                 max={50}
                 value={settings.defaultMaxAbsences}
                 onChange={e => handleDefaultChange(e.target.value)}
-                className="w-16 h-8 rounded-xl text-center text-xs font-bold"
+                className="w-16 h-9 rounded-xl text-center text-xs font-bold"
               />
-              <span className="text-[10px] text-muted-foreground">classes</span>
+              <span className="text-xs text-muted-foreground">classes</span>
             </div>
           </div>
 
           {/* Per-subject overrides */}
           {scheduledSubjects.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+            <div className="space-y-2.5 pt-1">
+              <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider px-0.5">
                 Per-Subject Overrides
               </p>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                 {scheduledSubjects.map(subject => (
                   <div
                     key={subject}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-secondary/30 text-xs"
+                    className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-secondary/30 text-xs"
                   >
                     <span className="truncate flex-1 font-medium" title={subject}>
                       {subject}
                     </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Input
                         type="number"
                         min={1}
@@ -172,9 +174,9 @@ export default function AttendanceView() {
                         placeholder={String(settings.defaultMaxAbsences)}
                         value={settings.perSubject[subject] ?? ''}
                         onChange={e => handleSubjectChange(subject, e.target.value)}
-                        className="w-16 h-8 rounded-xl text-center text-xs font-semibold"
+                        className="w-16 h-9 rounded-xl text-center text-xs font-semibold"
                       />
-                      <span className="text-[10px] text-muted-foreground">classes</span>
+                      <span className="text-[11px] text-muted-foreground">classes</span>
                     </div>
                   </div>
                 ))}
@@ -185,12 +187,12 @@ export default function AttendanceView() {
       )}
 
       {/* Overview Stat Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Attendance Rate */}
-        <div className="glass-card p-4 rounded-2xl space-y-1 relative overflow-hidden">
+        <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-2 relative overflow-hidden">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[10px] font-bold uppercase tracking-wider">Attendance</span>
-            <TrendingUp className="w-3.5 h-3.5 text-primary" />
+            <TrendingUp className="w-4 h-4 text-primary" />
           </div>
           <div className="flex items-baseline gap-1">
             <span className={`text-2xl font-extrabold font-display tabular-nums ${
@@ -203,58 +205,58 @@ export default function AttendanceView() {
               {overall.overallRate}%
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             {overall.totalAttended} of {overall.totalRecorded} logged
           </p>
         </div>
 
         {/* Total Missed */}
-        <div className="glass-card p-4 rounded-2xl space-y-1">
+        <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[10px] font-bold uppercase tracking-wider">Total Missed</span>
-            <UserX className="w-3.5 h-3.5 text-red-500" />
+            <UserX className="w-4 h-4 text-red-500" />
           </div>
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-extrabold font-display text-red-500 tabular-nums">
               {overall.totalMissed}
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium">classes</span>
+            <span className="text-[11px] text-muted-foreground font-medium">classes</span>
           </div>
-          <p className="text-[10px] text-muted-foreground">Recorded absences</p>
+          <p className="text-[11px] text-muted-foreground">Recorded absences</p>
         </div>
 
         {/* Allowed Absences Remaining */}
-        <div className="glass-card p-4 rounded-2xl space-y-1">
+        <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[10px] font-bold uppercase tracking-wider">Allowance Left</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline gap-1.5">
             <span className={`text-2xl font-extrabold font-display tabular-nums ${
               overall.totalRemainingAbsences <= 2 ? 'text-amber-500' : 'text-emerald-500'
             }`}>
               {overall.totalRemainingAbsences}
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium">remaining</span>
+            <span className="text-[11px] text-muted-foreground font-medium">remaining</span>
           </div>
-          <p className="text-[10px] text-muted-foreground">Across all subjects</p>
+          <p className="text-[11px] text-muted-foreground">Across all subjects</p>
         </div>
 
         {/* Subjects At Risk */}
-        <div className="glass-card p-4 rounded-2xl space-y-1">
+        <div className="glass-card p-4 sm:p-5 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[10px] font-bold uppercase tracking-wider">At Risk</span>
-            <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+            <ShieldAlert className="w-4 h-4 text-red-500" />
           </div>
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline gap-1.5">
             <span className={`text-2xl font-extrabold font-display tabular-nums ${
               overall.subjectsAtRiskCount > 0 ? 'text-red-500' : 'text-foreground'
             }`}>
               {overall.subjectsAtRiskCount}
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium">subjects</span>
+            <span className="text-[11px] text-muted-foreground font-medium">subjects</span>
           </div>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             {overall.subjectsAtRiskCount > 0 ? 'Near or over limit' : 'All within limits'}
           </p>
         </div>
@@ -262,10 +264,10 @@ export default function AttendanceView() {
 
       {/* Empty Schedule State */}
       {schedule.length === 0 && stats.length === 0 && (
-        <div className="glass-card p-8 text-center space-y-3">
+        <div className="glass-card p-10 text-center space-y-3">
           <BookOpen className="w-10 h-10 mx-auto text-muted-foreground/40" />
           <h3 className="font-semibold text-sm">No Courses Found</h3>
-          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
             Add your subjects in the Schedule tab to start tracking your attendance and absences automatically.
           </p>
         </div>
@@ -273,15 +275,15 @@ export default function AttendanceView() {
 
       {/* Subject Attendance Cards Section */}
       {stats.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Courses & Subjects ({stats.length})
             </h3>
-            <span className="text-[10px] text-muted-foreground">Tap any card for details</span>
+            <span className="text-[11px] text-muted-foreground">Tap any card for details</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {stats.map(s => {
               const isLimitReached = s.status === 'limit_reached';
               const isCritical = s.status === 'critical';
@@ -298,7 +300,7 @@ export default function AttendanceView() {
                   onClick={() => handleOpenSubjectModal(s)}
                   role="button"
                   tabIndex={0}
-                  className={`glass-card p-4.5 rounded-2xl space-y-3 cursor-pointer hover:border-primary/40 transition-all hover:scale-[1.01] active:scale-[0.99] border ${
+                  className={`glass-card p-5 sm:p-6 rounded-2xl space-y-4 cursor-pointer hover:border-primary/40 transition-all hover:scale-[1.01] active:scale-[0.99] border ${
                     isLimitReached
                       ? 'border-red-500/40 bg-red-500/5'
                       : isCritical
@@ -309,28 +311,28 @@ export default function AttendanceView() {
                   }`}
                 >
                   {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-sm text-foreground truncate" title={s.subject}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <p className="font-bold text-base text-foreground truncate" title={s.subject}>
                           {s.subject}
                         </p>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${s.warning.badgeClass}`}
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${s.warning.badgeClass}`}
                         >
                           {s.warning.label}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground">
                         {s.absent} missed · {s.attended} attended · {s.total} logged
                       </p>
                     </div>
 
-                    {/* Circular / Badge Percentage */}
-                    <div className="shrink-0 text-right">
+                    {/* Percentage */}
+                    <div className="shrink-0 text-right pl-2">
                       <div className="flex items-baseline justify-end gap-0.5">
                         <span
-                          className={`text-lg font-black font-display tabular-nums ${
+                          className={`text-xl font-black font-display tabular-nums ${
                             s.attendanceRate >= 85
                               ? 'text-emerald-500'
                               : s.attendanceRate >= 70
@@ -341,15 +343,15 @@ export default function AttendanceView() {
                           {s.attendanceRate}%
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground block">
+                      <span className="text-[10px] text-muted-foreground block mt-0.5">
                         rate
                       </span>
                     </div>
                   </div>
 
                   {/* Horizontal Absence Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground font-medium">
                         Absences Used: <strong className="text-foreground">{s.absent}</strong> of {s.maxAbsences}
                       </span>
@@ -360,7 +362,7 @@ export default function AttendanceView() {
                       </span>
                     </div>
 
-                    <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+                    <div className="w-full h-2.5 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isLimitReached
@@ -377,12 +379,12 @@ export default function AttendanceView() {
                   </div>
 
                   {/* Helpful Context Warning message */}
-                  <div className="flex items-center justify-between text-xs pt-0.5">
-                    <p className="text-[11px] text-muted-foreground truncate max-w-[80%]">
+                  <div className="flex items-center justify-between gap-3 text-xs pt-3 border-t border-border/40">
+                    <p className="text-xs text-muted-foreground truncate">
                       {s.warning.message}
                     </p>
-                    <span className="text-[11px] font-semibold text-primary inline-flex items-center gap-1 shrink-0">
-                      Details <ExternalLink className="w-3 h-3" />
+                    <span className="text-xs font-semibold text-primary inline-flex items-center gap-1 shrink-0">
+                      Details <ExternalLink className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </div>
@@ -393,29 +395,29 @@ export default function AttendanceView() {
       )}
 
       {/* Recent Attendance Activity Log Accordion */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <button
           type="button"
           onClick={() => setShowLog(l => !l)}
-          className="w-full glass-card p-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary/40 transition-colors rounded-2xl"
+          className="w-full glass-card p-4 sm:p-5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary/40 transition-colors rounded-2xl"
         >
           <span>Recent Activity Log ({sortedRecords.length} entries)</span>
           {showLog ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
         {showLog && (
-          <div className="space-y-2 animate-fade-in">
+          <div className="space-y-3 animate-fade-in">
             {sortedRecords.length === 0 ? (
-              <div className="glass-card p-6 text-center text-xs text-muted-foreground rounded-2xl">
+              <div className="glass-card p-8 text-center text-xs text-muted-foreground rounded-2xl">
                 No activity recorded yet. Click "Missed Class" on your schedule to begin logging.
               </div>
             ) : (
               <>
-                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                   {sortedRecords.map(r => (
                     <div
                       key={r.id}
-                      className="glass-card px-4 py-3 rounded-2xl flex items-center justify-between gap-3 text-xs"
+                      className="glass-card px-4 py-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {r.attended ? (
